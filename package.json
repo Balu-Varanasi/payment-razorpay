@@ -29,7 +29,7 @@
     "@jest/globals": "^29.2.6",
     "@medusajs/admin-sdk": "latest",
     "@medusajs/cli": "latest",
-    "@medusajs/framework": "^2.0.1",
+    "@medusajs/framework": "^2.5.1",
     "@medusajs/medusa": "latest",
     "@swc/core": "^1.7.28",
     "@swc/jest": "^0.2.36",
@@ -58,7 +58,7 @@
   "peerDependencies": {
     "@medusajs/admin-sdk": "latest",
     "@medusajs/cli": "latest",
-    "@medusajs/framework": "^2.0.0",
+    "@medusajs/framework": "^2.4.0",
     "@medusajs/medusa": "latest",
     "awilix": "^8.0.1"
   },
