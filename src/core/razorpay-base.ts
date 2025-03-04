@@ -28,6 +28,7 @@ import {
     HttpTypes,
     PaymentProviderOutput,
     PaymentCustomerDTO,
+    AddressDTO,
   } from "@medusajs/framework/types";
   import {
     AbstractPaymentProvider,
@@ -274,14 +275,14 @@ abstract class RazorpayBase extends AbstractPaymentProvider<RazorpayProviderConf
     }
     
     async createRazorpayCustomer(
-        customer: any,
-        intentRequest: any,
-        cart: any
+        intentRequest: Orders.RazorpayOrderCreateRequestBody,
+        customer: CustomerDTO,
+        storeCart: HttpTypes.StoreCart
     ): Promise<Customers.RazorpayCustomer | undefined> {
         let razorpayCustomer: Customers.RazorpayCustomer;
         const phone =
             customer.phone ??
-            cart.billing_address?.phone;
+            storeCart.billing_address?.phone;
 
         const gstin = (customer?.metadata?.gstin as string) ?? undefined;        
         if (!phone) {
@@ -378,8 +379,8 @@ abstract class RazorpayBase extends AbstractPaymentProvider<RazorpayProviderConf
             this.logger.info("creating the customer in razopay");
 
             razorpayCustomer = await this.createRazorpayCustomer(
-                customer,
                 intentRequest,
+                customer,
                 storeCart
             );            
         }
@@ -419,61 +420,61 @@ abstract class RazorpayBase extends AbstractPaymentProvider<RazorpayProviderConf
     }
 
     async getRazorpayPaymentStatus(
-        paymentIntent: Orders.RazorpayOrder,
-        attempts: {
+        razorpayOrder: Orders.RazorpayOrder,
+        attempedRazorpayPayments: {
             entity: string;
             count: number;
             items: Array<Payments.RazorpayPayment>;
         }
     ): Promise<PaymentSessionStatus> {
-        if (!paymentIntent) {
+        if (!razorpayOrder) {
             return PaymentSessionStatus.ERROR;
-        } else {
-            const authorisedAttempts = attempts.items.filter(
-                (i) => i.status == PaymentSessionStatus.AUTHORIZED
-            );
-            const totalAuthorised = authorisedAttempts.reduce((p, c) => {
-                p += parseInt(`${c.amount}`);
-                return p;
-            }, 0);
-            return totalAuthorised == paymentIntent.amount
-                ? PaymentSessionStatus.AUTHORIZED
-                : PaymentSessionStatus.REQUIRES_MORE;
-        }
+        } 
+
+        const authorisedRazorpayPayments: Payments.RazorpayPayment[] = attempedRazorpayPayments.items.filter(
+            (i) => i.status == PaymentSessionStatus.AUTHORIZED
+        );
+        const totalAuthorised: number = authorisedRazorpayPayments.reduce((p, c) => {
+            p += parseInt(`${c.amount}`);
+            return p;
+        }, 0);
+
+        return totalAuthorised == razorpayOrder.amount
+            ? PaymentSessionStatus.AUTHORIZED
+            : PaymentSessionStatus.REQUIRES_MORE;
     }
 
     async getPaymentStatus(
-        data: GetPaymentStatusInput
-    ): Promise<GetPaymentStatusOutput> {
-        const { data: paymentSessionData } = data;
-        const id = paymentSessionData?.id as string;        
-        if (!paymentSessionData || !id) {            
+        input: GetPaymentStatusInput
+    ): Promise<GetPaymentStatusOutput> {      
+        if (!input.data || !input.data?.id) {            
             throw this.buildError(
               "No payment intent ID provided while getting payment status",
               new Error("No payment intent ID provided")
             )
-          }        
-        const orderId = paymentSessionData.order_id as string;
-        let paymentIntent: Orders.RazorpayOrder;
-        let paymentsAttempted: {
+          }
+        const id = input.data.id as string;        
+        const orderId = input.data.order_id as string;
+        let razorpayOrder: Orders.RazorpayOrder;
+        let attempedRazorpayPayments: {
             entity: string;
             count: number;
             items: Array<Payments.RazorpayPayment>;
         };
         try {
-            paymentIntent = await this.razorpay_.orders.fetch(id);
-            paymentsAttempted = await this.razorpay_.orders.fetchPayments(id);
+            razorpayOrder = await this.razorpay_.orders.fetch(id);
+            attempedRazorpayPayments = await this.razorpay_.orders.fetchPayments(id);
         } catch (e) {
             this.logger.warn(
                 "received payment data from session not order data"
             );
-            paymentIntent = await this.razorpay_.orders.fetch(orderId);
-            paymentsAttempted = await this.razorpay_.orders.fetchPayments(
+            razorpayOrder = await this.razorpay_.orders.fetch(orderId);
+            attempedRazorpayPayments = await this.razorpay_.orders.fetchPayments(
                 orderId
             );
         }
 
-        switch (paymentIntent.status) {
+        switch (razorpayOrder.status) {
             // created' | 'authorized' | 'captured' | 'refunded' | 'failed'
             case "created":
                 return { status: PaymentSessionStatus.REQUIRES_MORE };
@@ -483,8 +484,8 @@ abstract class RazorpayBase extends AbstractPaymentProvider<RazorpayProviderConf
 
             case "attempted":
                 const status = await this.getRazorpayPaymentStatus(
-                    paymentIntent,
-                    paymentsAttempted
+                    razorpayOrder,
+                    attempedRazorpayPayments
                 );
                 return { status };
 
@@ -620,30 +621,31 @@ abstract class RazorpayBase extends AbstractPaymentProvider<RazorpayProviderConf
         throw this.buildError("An error occurred in cancelPayment", error);
     }
 
-    async capturePayment({
-        data: paymentSessionData,
-      }: CapturePaymentInput): Promise<CapturePaymentOutput> {
-        const order_id = (paymentSessionData as unknown as Orders.RazorpayOrder)
-            .id;
-        const paymentsResponse = await this.razorpay_.orders.fetchPayments(
-            order_id
+    async capturePayment(input: CapturePaymentInput): Promise<CapturePaymentOutput> {
+        const razorpayOrder: Orders.RazorpayOrder = input.data as unknown as Orders.RazorpayOrder;
+        const razorpayOrderPayments: {
+            entity: string;
+            count: number;
+            items: Array<Payments.RazorpayPayment>;
+        } = await this.razorpay_.orders.fetchPayments(
+            razorpayOrder.id
         );
-        const possibleCaptures = paymentsResponse.items?.filter(
+        const possibleRazorpayPaymentCaptures: Payments.RazorpayPayment[] = razorpayOrderPayments.items?.filter(
             (item) => item.status == "authorized"
         );
-        const result = possibleCaptures?.map(async (payment) => {
-            const { id, amount, currency } = payment;
+        const result = possibleRazorpayPaymentCaptures?.map(async (possibleRazorpayPaymentCapture) => {
+            const { id, amount, currency } = possibleRazorpayPaymentCapture;
             const toPay =
                 getAmountFromSmallestUnit(
                     Math.round(parseInt(amount.toString())),
                     currency.toUpperCase()
                 ) * 100;
-            const paymentIntent = await this.razorpay_.payments.capture(
+            const paymentCapture: Payments.RazorpayPayment = await this.razorpay_.payments.capture(
                 id,
                 toPay,
                 currency as string
             );
-            return paymentIntent;
+            return paymentCapture;
         });
         if (result) {
             const payments = await Promise.all(result);
@@ -651,92 +653,96 @@ abstract class RazorpayBase extends AbstractPaymentProvider<RazorpayProviderConf
                 (acc, curr) => ((acc[curr.id] = curr), acc),
                 {}
             );
-            (paymentSessionData as unknown as Orders.RazorpayOrder).payments =
-                res;
+            razorpayOrder.payments = res;
         }
-        return { data: paymentSessionData };
+        return { data: razorpayOrder as unknown as Record<string, unknown> };
     }
 
     async deletePayment(input: DeletePaymentInput): Promise<DeletePaymentOutput> {
         return await this.cancelPayment(input)
     }
 
-    async refundPayment({
-        amount: refundAmount,
-        data,
-      }: RefundPaymentInput): Promise<RefundPaymentOutput> {   
-        if (!refundAmount) {
+    async refundPayment(input: RefundPaymentInput): Promise<RefundPaymentOutput> {   
+        if (!input.amount) {
             throw this.buildError(
                 "No refund amount provided",
                 new Error("No refund amount provided")
             )               
         }   
 
-        if (!data) {
+        if (!input.data) {
             throw this.buildError(
                 "No payment intent data provided while refunding payment",
                 new Error("No payment intent data provided")
             )   
         }     
 
-        if (!data.id) {
+        if (!input.data.id) {
             throw this.buildError(
                 "No payment intent ID provided while refunding payment",
                 new Error("No payment intent ID provided")
             )
         }    
-        
-        const id = (data as unknown as Orders.RazorpayOrder).id as string;             
-        const paymentList = await this.razorpay_.orders.fetchPayments(id);
+        const razorpayOrder: Orders.RazorpayOrder = input.data as unknown as Orders.RazorpayOrder;
+        const id: string = razorpayOrder.id as string;             
+        const razorpayOrderPayments: {
+            entity: string;
+            count: number;
+            items: Array<Payments.RazorpayPayment>;
+        } = await this.razorpay_.orders.fetchPayments(id);
 
-        const payment_id = paymentList.items?.find((p) => {
+        const filteredRazorpayPaymentToRefund: Payments.RazorpayPayment | undefined = razorpayOrderPayments.items?.find((p) => {
             return (
-                parseInt(`${p.amount}`) >= parseInt(refundAmount as string) * 100 &&
+                parseInt(`${p.amount}`) >= parseInt(input.amount as string) * 100 &&
                 (p.status == "authorized" || p.status == "captured")
             );
-        })?.id;
-        if (payment_id) {
+        });
+        if (filteredRazorpayPaymentToRefund?.id) {
             const refundRequest = {
-                amount: parseInt(refundAmount as string) * 100
+                amount: parseInt(input.amount as string) * 100
             };
             try {
                 const refundSession = await this.razorpay_.payments.refund(
-                    payment_id,
+                    filteredRazorpayPaymentToRefund.id as string,
                     refundRequest
                 );
-                const refundsIssued =
-                    data.refundSessions as Refunds.RazorpayRefund[];
+                const refundsIssued: Refunds.RazorpayRefund[] =
+                    input.data.refundSessions as Refunds.RazorpayRefund[];
                 if (refundsIssued?.length > 0) {
                     refundsIssued.push(refundSession);
                 } else {
-                    data.refundSessions = [refundSession];
+                    input.data.refundSessions = [refundSession];
                 }
             } catch (e) {
                 throw this.buildError("An error occurred in refundPayment", e);
             }
         }
-        return { data };
+        return { data: input.data };
     }
 
-    async retrievePayment({
-        data,
-      }: RetrievePaymentInput): Promise<RetrievePaymentOutput> {
-        let intent;
+    async retrievePayment(input: RetrievePaymentInput): Promise<RetrievePaymentOutput> {
+        const data: Record<string, unknown> = input.data as Record<string, unknown>;
+        let razorpayOrderIntent: Orders.RazorpayOrder | undefined = undefined;
+
+        if (!data.id) {
+            throw this.buildError(
+                "No payment intent ID provided while retrieving payment",
+                new Error("No payment intent ID provided")
+            )
+        }
         try {
-            const id = (data as unknown as Orders.RazorpayOrder)
-                .id as string;
-            intent = await this.razorpay_.orders.fetch(id);
+            razorpayOrderIntent = await this.razorpay_.orders.fetch(data.id as string);
         } catch (e) {
-            const id = (
+            const orderId = (
                 data as unknown as Payments.RazorpayPayment
             ).order_id as string;
             try {
-                intent = await this.razorpay_.orders.fetch(id);
+                razorpayOrderIntent = await this.razorpay_.orders.fetch(orderId);
             } catch (e) {
                 this.buildError("An error occurred in retrievePayment", e);
             }
         }
-        return { data: intent as unknown as Record<string, unknown> }
+        return { data: razorpayOrderIntent as unknown as Record<string, unknown> }
     }
 
     async updatePayment(input: UpdatePaymentInput): Promise<UpdatePaymentOutput> {
@@ -749,45 +755,46 @@ abstract class RazorpayBase extends AbstractPaymentProvider<RazorpayProviderConf
             )
         }
 
-        const customer: PaymentCustomerDTO = context.customer;
-        const billing_address = customer.billing_address;
-
-        if(!customer.billing_address) {
+        if(!context?.customer?.billing_address) {
             throw this.buildError(
                 "An error occurred in updatePayment during the retrieve of the cart",
                 new Error(
                     "An error occurred in updatePayment during the retrieve of the cart"
                 )
             );
-        }
+        }        
+
+        const customer: PaymentCustomerDTO = context.customer;
+        const customerId: string = customer.id as string;
+        const billing_address: Partial<AddressDTO> | null = customer.billing_address ?? null;
 
         let refreshedCustomer: CustomerDTO;
-        let customerPhone = "";
+        let customerPhone: string = "";
         let razorpayId: string;
-        if (customer) {
-            try {
-                refreshedCustomer = customer as CustomerDTO;
-                razorpayId = (refreshedCustomer?.metadata as any)?.razorpay
-                    ?.rp_customer_id;
-                customerPhone =
-                    refreshedCustomer?.phone ?? billing_address?.phone ?? "";
-                if (
-                    refreshedCustomer?.addresses.length && !refreshedCustomer.addresses.find(
-                        (v) => v.id == billing_address?.id
-                    )
-                ) {
-                    this.logger.warn("no customer billing found");
-                }
-            } catch {
-                throw this.buildError(
-                    "An error occurred in updatePayment during the retrieve of the customer",
-                    new Error(
-                        "An error occurred in updatePayment during the retrieve of the customer"
-                    )
-                );
+
+        try {
+            refreshedCustomer = customer as CustomerDTO;
+            razorpayId = (refreshedCustomer?.metadata as any)?.razorpay
+                ?.rp_customer_id;
+            customerPhone =
+                refreshedCustomer?.phone ?? billing_address?.phone ?? "";
+            if (
+                refreshedCustomer?.addresses.length && !refreshedCustomer.addresses.find(
+                    (v) => v.id == billing_address?.id
+                )
+            ) {
+                this.logger.warn("no customer billing found");
             }
+        } catch {
+            throw this.buildError(
+                "An error occurred in updatePayment during the retrieve of the customer",
+                new Error(
+                    "An error occurred in updatePayment during the retrieve of the customer"
+                )
+            );
         }
-        const isNonEmptyPhone =
+
+        const isNonEmptyPhone: string =
             customerPhone || billing_address?.phone || customer?.phone || "";
 
         if (!razorpayId!) {
@@ -839,26 +846,25 @@ abstract class RazorpayBase extends AbstractPaymentProvider<RazorpayProviderConf
             }
 
             try {
-                const id = customer.id as string;
-                let sessionOrderData: Partial<Orders.RazorpayOrder> = {
-                    currency: "INR"
+                let partialSessionRazorpayOrder: Partial<Orders.RazorpayOrder> = {
+                    currency: "INR",
                 };
-                if (id) {
-                    sessionOrderData = (await this.razorpay_.orders.fetch(
-                        id
+                if (customerId) {
+                    partialSessionRazorpayOrder = (await this.razorpay_.orders.fetch(
+                        customerId
                     )) as Partial<Orders.RazorpayOrder>;
-                    delete sessionOrderData.id;
-                    delete sessionOrderData.created_at;
+                    delete partialSessionRazorpayOrder.id;
+                    delete partialSessionRazorpayOrder.created_at;
                 }
                 input.currency_code =
                     currency_code?.toUpperCase() ??
-                    sessionOrderData?.currency ??
+                    partialSessionRazorpayOrder?.currency ??
                     "INR";
-                const newPaymentSessionOrder = (await this.initiatePayment(
+                const initiatePaymentOutput: InitiatePaymentOutput = (await this.initiatePayment(
                     input
                 ));
 
-                return newPaymentSessionOrder
+                return initiatePaymentOutput
             } catch (e) {
                 throw this.buildError("An error occurred in updatePayment", e);
             }
@@ -880,23 +886,22 @@ abstract class RazorpayBase extends AbstractPaymentProvider<RazorpayProviderConf
         }
            
         try {
-            const paymentSession = await this.razorpay_.payments.fetch(
-                (data.data as Record<string, any>).id as string
-            );
+            const razorpayPaymentId: string = (data.data as Record<string, any>).id as string
+            const razorpayPayment = await this.razorpay_.payments.fetch(razorpayPaymentId);
             if (data.notes || (data.data as any)?.notes) {
                 const notes = data.notes || (data.data as any)?.notes;
-                const result = (await this.razorpay_.orders.edit(
+                const editedRazorpayOrder: Orders.RazorpayOrder = (await this.razorpay_.orders.edit(
                     sessionId,
                     {
-                        notes: { ...paymentSession.notes, ...notes }
+                        notes: { ...razorpayPayment.notes, ...notes }
                     }
-                )) as unknown as Record<string, any>;
-                return { data: result };
+                ));
+                return { data: editedRazorpayOrder as Record<string, any>} as UpdatePaymentOutput;
             } else {
                 this.logger.warn(
                     "only notes can be updated in razorpay order"
                 );
-                return paymentSession as unknown as UpdatePaymentOutput;
+                return razorpayPayment as unknown as UpdatePaymentOutput;
             }
         } catch (e) {
             this.logger.error(

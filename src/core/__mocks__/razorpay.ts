@@ -9,8 +9,10 @@
 
 // const mockEnabled = process.env.DISABLE_MOCKS == "true" ? false : true;
 
-// export const WRONG_CUSTOMER_EMAIL = "wrong@test.fr";
-// export const EXISTING_CUSTOMER_EMAIL = "right@test.fr";
+// export const WRONG_CUSTOMER_EMAIL = "wrong@test.net";
+// export const EXISTING_CUSTOMER_ID = 'cus_01JMW6SDES9T1SNEMTJFNFGYAK';
+// export const EXISTING_CUSTOMER_EMAIL = "test@test.net";
+// export const EXISTING_CUSTOMER_CONTACT = "+919876543210";
 // export const RAZORPAY_ID = isMocksEnabled() ? "test" : process.env.RAZORPAY_ID;
 // export const PARTIALLY_FAIL_INTENT_ID = "partially_unknown";
 // export const FAIL_INTENT_ID = "unknown";

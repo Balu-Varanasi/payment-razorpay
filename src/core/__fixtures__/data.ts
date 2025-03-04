@@ -1,33 +1,33 @@
 // import { AuthorizePaymentOutput, CancelPaymentOutput, CapturePaymentOutput, DeletePaymentOutput, HttpTypes, InitiatePaymentInput, RefundPaymentOutput, RetrievePaymentOutput } from "@medusajs/framework/types";
 // import {
+//     EXISTING_CUSTOMER_ID,
 //     EXISTING_CUSTOMER_EMAIL,
+//     EXISTING_CUSTOMER_CONTACT,
 //     FAIL_INTENT_ID,
 //     PARTIALLY_FAIL_INTENT_ID,
 //     RAZORPAY_ID,
 //     WRONG_CUSTOMER_EMAIL,
-//     isMocksEnabled
 // } from "../__mocks__/razorpay";
 // import { PaymentSessionStatus } from "@medusajs/framework/utils";
-// // import { PaymentIntentDataByStatus } from "../__fixtures__/data";
 
 // export const PaymentIntentDataByStatus = {
 //     ATTEMPTED: {
-//         id: "test-user-1234"
+//         id: EXISTING_CUSTOMER_ID,
 //     },
 //     SUCCEEDED: {
-//         id: "test-user-1234"
+//         id: EXISTING_CUSTOMER_ID,
 //     },
 //     CANCELED: {
-//         id: "test-user-1234"
+//         id: EXISTING_CUSTOMER_ID,
 //     },
 //     FAILED: {
-//         id: "test-user-1234"
+//         id: EXISTING_CUSTOMER_ID,
 //     },
 //     UNKNOWN: {
-//         id: "test-user-1234"
+//         id: EXISTING_CUSTOMER_ID,
 //     },
 //     CREATED: {
-//         id: "test-user-1234"
+//         id: EXISTING_CUSTOMER_ID,
 //     }
 // };
 // // INITIATE PAYMENT DATA
@@ -35,7 +35,7 @@
 // export const STORE_CART: any = {
 //     id: 'cart_01JMVM3592WMZBXJ7H7P06V665',
 //     currency_code: 'eur',
-//     email: 'test@test.net',
+//     email: EXISTING_CUSTOMER_EMAIL,
 //     region_id: 'reg_01JMMHV5RMMT3S092P136WHM92',
 //     created_at: '2025-02-24T09:19:59.778Z',
 //     updated_at: '2025-02-27T12:54:47.383Z',
@@ -76,46 +76,24 @@
 //         product_id: 'prod_01JMMHV5ZTVVKJ61BJHR3CWR9P',
 //         product_title: 'Medusa Sweatshirt',
 //         product_description: 'Reimagine the feeling of a classic sweatshirt. With our cotton sweatshirt, everyday essentials no longer have to be ordinary.',
-//         product_subtitle: null,
-//         product_type: null,
-//         product_type_id: null,
-//         product_collection: null,
 //         product_handle: 'sweatshirt',
 //         variant_sku: 'SWEATSHIRT-L',
-//         variant_barcode: null,
 //         variant_title: 'L',
-//         variant_option_values: null,
 //         requires_shipping: true,
 //         is_discountable: true,
 //         is_tax_inclusive: false,
-//         is_custom_price: false,
 //         metadata: {},
 //         cart_id: 'cart_01JMVM3592WMZBXJ7H7P06V665',
-//         raw_compare_at_unit_price: null,
-//         raw_unit_price: [Object],
-//         created_at: '2025-02-24T09:20:00.237Z',
-//         updated_at: '2025-02-24T09:20:00.237Z',
-//         deleted_at: null,
 //         adjustments: [],
 //         tax_lines: [],
-//         compare_at_unit_price: null,
 //         unit_price: 10,
 //         subtotal: 10,
 //         total: 10,
 //         original_total: 10,
 //         discount_total: 0,
-//         discount_subtotal: 0,
 //         discount_tax_total: 0,
 //         tax_total: 0,
 //         original_tax_total: 0,
-//         raw_subtotal: { value: '10', precision: 20 },
-//         raw_total: { value: '10', precision: 20 },
-//         raw_original_total: { value: '10', precision: 20 },
-//         raw_discount_total: { value: '0', precision: 20 },
-//         raw_discount_subtotal: { value: '0', precision: 20 },
-//         raw_discount_tax_total: { value: '0', precision: 20 },
-//         raw_tax_total: { value: '0', precision: 20 },
-//         raw_original_tax_total: { value: '0', precision: 20 },
 //         product: {
 //             id: 'prod_01JMMHV5ZTVVKJ61BJHR3CWR9P',
 //             title: 'Medusa Sweatshirt',
@@ -125,7 +103,6 @@
 //             is_giftcard: false,
 //             status: 'published',
 //             thumbnail: 'https://medusa-public-images.s3.eu-west-1.amazonaws.com/sweatshirt-vintage-front.png',
-//             weight: '400',
 //             length: null,
 //             height: null,
 //             width: null,
@@ -144,7 +121,11 @@
 //             updated_at: '2025-02-21T15:26:00.171Z',
 //             deleted_at: null,
 //             tags: [],
-//             categories: [ { id: 'pcat_01JMMHV5YW6TEF65F0F126DPD4' } ]
+//             categories: [],
+//             variants: [],
+//             options: [],
+//             images: [],
+//             weight: 400,
 //         },
 //         variant: {
 //             id: 'variant_01JMMHV637E12DQCTPES8GM9RW',
@@ -166,53 +147,48 @@
 //             metadata: null,
 //             variant_rank: 0,
 //             product_id: 'prod_01JMMHV5ZTVVKJ61BJHR3CWR9P',
-//             product: { id: 'prod_01JMMHV5ZTVVKJ61BJHR3CWR9P' },
+//             product: {} as any,
 //             created_at: '2025-02-21T15:26:00.299Z',
 //             updated_at: '2025-02-21T15:26:00.299Z',
-//             deleted_at: null
+//             deleted_at: null,
+//             options: [],
 //         },
 //       }
 //     ],
-//     shipping_methods: [
-//       {
-//         amount: 10,
-//         is_tax_inclusive: false,
-//         shipping_option_id: 'so_01JMMHV5WCHZXGEZCA9G0Z9ZWB',
-//         name: 'Standard Shipping',
-//         id: 'casm_01JMVM559C1R40NJYB2WNS67BK',
-//         tax_lines: [],
-//         adjustments: []
-//       }
-//     ],
+//     shipping_methods: [],
 //     shipping_address: {
-//       id: 'caaddr_01JN3QJKTPE8ARQ6B8H79XBD8H',
-//       first_name: 'Balu',
-//       last_name: 'Varanasi',
-//       company: '',
-//       address_1: 'Flat Number, Apartment, Street Name',
-//       address_2: '',
-//       city: 'Test Country',
-//       postal_code: '500049',
-//       country_code: 'fr',
-//       province: 'Test Province',
-//       phone: '+91-9876543210'
+//         id: 'caaddr_01JN3QJKTPE8ARQ6B8H79XBD8H',
+//         first_name: 'Balu',
+//         last_name: 'Varanasi',
+//         company: '',
+//         address_1: 'Flat Number, Apartment, Street Name',
+//         address_2: '',
+//         city: 'Test Country',
+//         postal_code: '500049',
+//         country_code: 'fr',
+//         province: 'Test Province',
+//         phone: EXISTING_CUSTOMER_CONTACT,
+//         created_at: '2025-02-24T09:19:59.778Z',
+//         updated_at: '2025-02-24T09:19:59.778Z',
 //     },
 //     billing_address: {
-//       id: 'caaddr_01JN3QJKTPRFXK4G2XJQJYB9Y8',
-//       first_name: 'Balu',
-//       last_name: 'Varanasi',
-//       company: '',
-//       address_1: 'Flat Number, Apartment, Street Name',
-//       address_2: '',
-//       city: 'Test Country',
-//       postal_code: '500049',
-//       country_code: 'fr',
-//       province: 'Test Province',
-//       phone: '+91-9876543210'
+//         id: 'caaddr_01JN3QJKTPRFXK4G2XJQJYB9Y8',
+//         first_name: 'Balu',
+//         last_name: 'Varanasi',
+//         company: '',
+//         address_1: 'Flat Number, Apartment, Street Name',
+//         address_2: '',
+//         city: 'Test Country',
+//         postal_code: '500049',
+//         country_code: 'fr',
+//         province: 'Test Province',
+//         phone: EXISTING_CUSTOMER_CONTACT,
+//         created_at: '2025-02-24T09:19:59.778Z',
+//         updated_at: '2025-02-24T09:19:59.778Z',      
 //     },
 //     customer: {
-//       id: 'cus_01JMW6SDES9T1SNEMTJFNFGYAK',
-//       email: 'test@test.net',
+//       id: EXISTING_CUSTOMER_ID,
+//       email: EXISTING_CUSTOMER_EMAIL,
 //       groups: []
 //     },
 //     region: {
@@ -333,9 +309,9 @@
 //             data: {},
 //             context: {
 //               customer: {
-//                 id: 'cus_01JMW6SDES9T1SNEMTJFNFGYAK',
-//                 email: 'test@test.net',
-//                 phone: '+919876543210',
+//                 id: EXISTING_CUSTOMER_ID,
+//                 email: EXISTING_CUSTOMER_EMAIL,
+//                 phone: EXISTING_CUSTOMER_CONTACT,
 //                 metadata: null,
 //                 addresses: [],
 //                 last_name: 'Varanasi',
@@ -374,7 +350,7 @@
 //             id: "TEST-CUSTOMER",
 //             last_name: "test",
 //             first_name: "customer",
-//             phone: "9876542321",
+//             phone: EXISTING_CUSTOMER_CONTACT,
 //             email: EXISTING_CUSTOMER_EMAIL,
 //         },        
 //     },
@@ -389,9 +365,9 @@
 //     },    
 //     context: {
 //         customer: {
-//             id: "TEST-CUSTOMER-ID",
+//             id: EXISTING_CUSTOMER_ID,
 //             email: EXISTING_CUSTOMER_EMAIL,
-//             phone: "9876542321",
+//             phone: EXISTING_CUSTOMER_CONTACT,
 //             last_name: "test",
 //             first_name: "customer",
 //         },
@@ -400,7 +376,6 @@
 //                 razorpay_id: "TEST-CUSTOMER-ID",
 //             },
 //         }
-
 //     },
 //     data: {
 //         notes: {
@@ -411,7 +386,7 @@
 
 // export const initiatePaymentContextWithWrongEmail = {
 //     email: WRONG_CUSTOMER_EMAIL,
-//     currency_code: "inr",
+//     currency_code: "eur",
 //     amount: 1000,
 //     resource_id: "test",
 //     customer: { last_name: "test", first_name: "customer" },
@@ -421,7 +396,7 @@
 
 // export const initiatePaymentContextWithFailIntentCreation = {
 //     email: EXISTING_CUSTOMER_EMAIL,
-//     currency_code: "inr",
+//     currency_code: "eur",
 //     amount: 1000,
 //     resource_id: "test",
 //     customer: { last_name: "test", first_name: "customer" },
