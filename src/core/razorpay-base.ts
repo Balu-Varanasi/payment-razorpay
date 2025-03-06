@@ -75,14 +75,7 @@ abstract class RazorpayBase extends AbstractPaymentProvider<RazorpayProviderConf
         this.options_ = options;
         this.logger = container.logger as Logger;
 
-        this.container_ = container;
-
-        this.logger.info("================================================")
-        this.logger.info("RazorpayBase.constructor")
-        this.logger.info(`Container: ${JSON.stringify(this.container_, null, 4)}`)
-        this.logger.info(`Options: ${JSON.stringify(this.options_, null, 4)}`)
-        this.logger.info(`Config: ${JSON.stringify(this.config, null, 4)}`)
-        this.logger.info("================================================")          
+        this.container_ = container;        
 
         // TODO: [github.com/Balu-Varanasi] Fix this later. Not sure why options has no key_id and has providers.
         if (!this.options_.key_id && this.options_.providers?.length) {
@@ -109,11 +102,7 @@ abstract class RazorpayBase extends AbstractPaymentProvider<RazorpayProviderConf
         }
     }
 
-    protected init(): void {
-        this.logger.info("================================================")
-        this.logger.info("RazorpayBase.init")
-        this.logger.info(`Options: ${JSON.stringify(this.options_, null, 4)}`)
-        this.logger.info("================================================")          
+    protected init(): void {       
         if (!this.options_.key_id) {
             throw new MedusaError(
                 MedusaErrorTypes.INVALID_ARGUMENT,
@@ -121,7 +110,6 @@ abstract class RazorpayBase extends AbstractPaymentProvider<RazorpayProviderConf
                 MedusaErrorCodes.CART_INCOMPATIBLE_STATE
             );
         }
-        this.logger.info(`Razorpay options: ${JSON.stringify(this.options_, null, 4)}`);
         this.razorpay_ =
             this.razorpay_ ||
             new Razorpay({
@@ -136,10 +124,7 @@ abstract class RazorpayBase extends AbstractPaymentProvider<RazorpayProviderConf
 
     abstract get paymentIntentOptions(): PaymentIntentOptions;
 
-    getPaymentIntentOptions(): Partial<PaymentIntentOptions> {
-        this.logger.info("================================================")
-        this.logger.info("RazorpayBase.getPaymentIntentOptions")
-        this.logger.info("================================================")         
+    getPaymentIntentOptions(): Partial<PaymentIntentOptions> {      
         const options: Partial<PaymentIntentOptions> = {};
 
         if (this?.paymentIntentOptions?.capture_method) {
@@ -166,12 +151,6 @@ abstract class RazorpayBase extends AbstractPaymentProvider<RazorpayProviderConf
         parameterName: string,
         parameterValue: string
     ): Promise<CustomerDTO> {
-        this.logger.info("================================================")
-        this.logger.info("RazorpayBase.updateRazorpayMetadataInCustomer")
-        this.logger.info(`Customer: ${JSON.stringify(customer, null, 4)}`)
-        this.logger.info(`Parameter Name: ${parameterName}`)
-        this.logger.info(`Parameter Value: ${parameterValue}`)
-
         const metadata = customer.metadata;
         let razorpay = metadata?.razorpay as Record<string, string>;
         if (razorpay) {
@@ -189,22 +168,14 @@ abstract class RazorpayBase extends AbstractPaymentProvider<RazorpayProviderConf
                 razorpay
             }
         });
-        const result = x.result.customer;
-
-        this.logger.info(`Updated Customer: ${JSON.stringify(result, null, 4)}`)
-        this.logger.info("================================================")            
+        const result = x.result.customer;          
         return result;
     }    
 
     async getRazorpayId(
         intentRequest: Orders.RazorpayOrderCreateRequestBody,
         customer: CustomerDTO
-    ): Promise<string | undefined> {
-        this.logger.info("================================================")
-        this.logger.info("RazorpayBase.getRazorpayId")
-        this.logger.info(`Intent Request: ${JSON.stringify(intentRequest, null, 4)}`)
-        this.logger.info(`Customer: ${JSON.stringify(customer, null, 4)}`)
-        this.logger.info("================================================")          
+    ): Promise<string | undefined> {        
         if (!this._razorpayId) {
             this._razorpayId = intentRequest.notes?.razorpay_id ||
                 (customer.metadata as any)?.razorpay_id ||
@@ -236,11 +207,7 @@ abstract class RazorpayBase extends AbstractPaymentProvider<RazorpayProviderConf
 
     async _pollExistingRazorpayCustomer(
         customer: CustomerDTO
-    ): Promise<Customers.RazorpayCustomer> {
-        this.logger.info("================================================")
-        this.logger.info("RazorpayBase._pollExistingRazorpayCustomer")
-        this.logger.info(`Customer: ${JSON.stringify(customer, null, 4)}`)
-        this.logger.info("================================================")           
+    ): Promise<Customers.RazorpayCustomer> {        
         let razorpayCustomer: Customers.RazorpayCustomer | undefined = undefined;
         let customerList: Customers.RazorpayCustomer[] = [];
 
@@ -248,9 +215,8 @@ abstract class RazorpayBase extends AbstractPaymentProvider<RazorpayProviderConf
         let skip = 0;
 
         try {
-            customerList = (
-                await this.razorpay_.customers.all({ count, skip })
-            )?.items;
+            const allRazorpayCustomers = await this.razorpay_.customers.all({ count, skip })
+            customerList = allRazorpayCustomers?.items;
         } catch (e) {
             this.logger.error(
                 "unable to fetch customers in the razorpay payment processor: " + JSON.stringify(e, null, 4)
@@ -268,20 +234,15 @@ abstract class RazorpayBase extends AbstractPaymentProvider<RazorpayProviderConf
             this.logger.error(
                 "unable to poll the customer in the razorpay payment processor"
             );
-            throw new Error("could not find customer in razorpay");
-        }        
+            throw new Error(`could not find customer in razorpay: Customer: ${JSON.stringify(customer, null, 4)} : Customer List: ${JSON.stringify(customerList, null, 4)} : Razorpay Customer: ${JSON.stringify(razorpayCustomer, null, 4)} : Options: ${JSON.stringify(this.options_, null, 4)}`);
+        }          
         return razorpayCustomer;
     }
 
     async getRazorpayCustomer(
         intentRequest: Orders.RazorpayOrderCreateRequestBody,
         customer: CustomerDTO
-    ): Promise<Customers.RazorpayCustomer | undefined> {
-        this.logger.info("================================================")
-        this.logger.info("RazorpayBase.getRazorpayCustomer")
-        this.logger.info(`Intent Request: ${JSON.stringify(intentRequest, null, 4)}`)
-        this.logger.info(`Customer: ${JSON.stringify(customer, null, 4)}`)
-        this.logger.info("================================================")          
+    ): Promise<Customers.RazorpayCustomer | undefined> {        
         if (this._razorpayCustomer) {
             return this._razorpayCustomer;
         }
@@ -320,12 +281,6 @@ abstract class RazorpayBase extends AbstractPaymentProvider<RazorpayProviderConf
         customer: CustomerDTO,
         storeCart: HttpTypes.StoreCart
     ): Promise<Customers.RazorpayCustomer | undefined> {
-        this.logger.info("================================================")
-        this.logger.info("RazorpayBase.createRazorpayCustomer")
-        this.logger.info(`Intent Request: ${JSON.stringify(intentRequest, null, 4)}`)
-        this.logger.info(`Customer: ${JSON.stringify(customer, null, 4)}`)
-        this.logger.info(`Store Cart: ${JSON.stringify(storeCart, null, 4)}`)    
-
         const phone =
             customer.phone ??
             storeCart.billing_address?.phone;
@@ -370,9 +325,7 @@ abstract class RazorpayBase extends AbstractPaymentProvider<RazorpayProviderConf
                 "unable to create customer in the razorpay payment processor: " + JSON.stringify(e, null, 4)
             );
             return;
-        }
-        this.logger.info(`Razorpay Customer: ${JSON.stringify(razorpayCustomer || {}, null, 4)}`)
-        this.logger.info("================================================")              
+        }           
         return  razorpayCustomer
     }
     
@@ -380,12 +333,7 @@ abstract class RazorpayBase extends AbstractPaymentProvider<RazorpayProviderConf
         intentRequest: Orders.RazorpayOrderCreateRequestBody,
         customer: CustomerDTO,        
         storeCart: HttpTypes.StoreCart,        
-    ): Promise<Customers.RazorpayCustomer | undefined> {  
-        this.logger.info("================================================")
-        this.logger.info("RazorpayBase.updateExistingRazorpayCustomer")
-        this.logger.info(`Intent Request: ${JSON.stringify(intentRequest, null, 4)}`)
-        this.logger.info(`Customer: ${JSON.stringify(customer, null, 4)}`)
-        this.logger.info(`Store Cart: ${JSON.stringify(storeCart, null, 4)}`)            
+    ): Promise<Customers.RazorpayCustomer | undefined> {            
         const razorpayCustomer: Customers.RazorpayCustomer | undefined = await this.getRazorpayCustomer(intentRequest, customer);;
 
         // edit the customer once fetched
@@ -406,9 +354,7 @@ abstract class RazorpayBase extends AbstractPaymentProvider<RazorpayProviderConf
                     "unable to edit customer in the razorpay payment processor"
                 );
             }
-        }
-        this.logger.info(`Razorpay Customer: ${JSON.stringify(this._razorpayCustomer || {}, null, 4)}`)
-        this.logger.info("================================================")            
+        }        
         return this._razorpayCustomer; // returning un modified razorpay customer
     }
 
@@ -417,13 +363,6 @@ abstract class RazorpayBase extends AbstractPaymentProvider<RazorpayProviderConf
         customer: CustomerDTO,
         storeCart: HttpTypes.StoreCart
     ): Promise<Customers.RazorpayCustomer | undefined> {
-        this.logger.info("================================================")
-        this.logger.info("RazorpayBase.createOrUpdateRazorpayCustomer")
-        this.logger.info(`Intent Request: ${JSON.stringify(intentRequest, null, 4)}`)
-        this.logger.info(`Customer: ${JSON.stringify(customer, null, 4)}`)
-        this.logger.info(`Store Cart: ${JSON.stringify(storeCart, null, 4)}`)
-        
-        
         let razorpayCustomer: Customers.RazorpayCustomer | undefined = await this.getRazorpayCustomer(intentRequest, customer)
 
         if (razorpayCustomer) {
@@ -436,9 +375,7 @@ abstract class RazorpayBase extends AbstractPaymentProvider<RazorpayProviderConf
                 storeCart,                
             );
         } else {
-            this.logger.info("customer doesn't exist in razopay");
-            this.logger.info("creating the customer in razopay");
-
+            this.logger.info("customer doesn't exist in razopay. so, creating a new customer");
             razorpayCustomer = await this.createRazorpayCustomer(
                 intentRequest,
                 customer,
@@ -450,10 +387,7 @@ abstract class RazorpayBase extends AbstractPaymentProvider<RazorpayProviderConf
             this.logger.error(
                 "unable to poll the customer in the razorpay payment processor"
             );
-        }
-
-        this.logger.info(`Razorpay Customer: ${JSON.stringify(razorpayCustomer || {}, null, 4)}`)
-        this.logger.info("================================================")                        
+        }                      
         return razorpayCustomer;
     }
     
@@ -463,13 +397,7 @@ abstract class RazorpayBase extends AbstractPaymentProvider<RazorpayProviderConf
         razorpay_payment_id: string,
         razorpay_order_id: string,
         razorpay_signature: string
-    ): boolean {
-        this.logger.info("================================================")
-        this.logger.info("RazorpayBase._validateSignature")
-        this.logger.info(`Razorpay Order ID: ${razorpay_order_id}`)
-        this.logger.info(`Razorpay Payment ID: ${razorpay_payment_id}`)
-        this.logger.info(`Razorpay Signature: ${razorpay_signature}`)
-        this.logger.info("================================================")        
+    ): boolean {    
         const body = razorpay_order_id + "|" + razorpay_payment_id;
         if (!this.options_.key_id) {
             throw new MedusaError(
@@ -497,10 +425,6 @@ abstract class RazorpayBase extends AbstractPaymentProvider<RazorpayProviderConf
             items: Array<Payments.RazorpayPayment>;
         }
     ): Promise<PaymentSessionStatus> {
-        this.logger.info("================================================")
-        this.logger.info("RazorpayBase.getRazorpayPaymentStatus")
-        this.logger.info(`Razorpay Order: ${JSON.stringify(razorpayOrder, null, 4)}`)
-        this.logger.info(`Razorpay Payments: ${JSON.stringify(attempedRazorpayPayments, null, 4)}`)
         if (!razorpayOrder) {
             return PaymentSessionStatus.ERROR;
         } 
@@ -511,13 +435,7 @@ abstract class RazorpayBase extends AbstractPaymentProvider<RazorpayProviderConf
         const totalAuthorised: number = authorisedRazorpayPayments.reduce((p, c) => {
             p += parseInt(`${c.amount}`);
             return p;
-        }, 0);
-
-        this.logger.info(`Total Authorised: ${totalAuthorised}`);
-        this.logger.info(`razorpayOrder.amount: ${razorpayOrder.amount}`);
-        this.logger.info(`Payment Session Status: PaymentSessionStatus.AUTHORIZED - ${PaymentSessionStatus.AUTHORIZED}`);
-        this.logger.info(`Payment Session Status: PaymentSessionStatus.REQUIRES_MORE - ${PaymentSessionStatus.REQUIRES_MORE}`);
-        this.logger.info("================================================")        
+        }, 0);    
         return totalAuthorised == razorpayOrder.amount
             ? PaymentSessionStatus.AUTHORIZED
             : PaymentSessionStatus.REQUIRES_MORE;
@@ -526,10 +444,6 @@ abstract class RazorpayBase extends AbstractPaymentProvider<RazorpayProviderConf
     async getPaymentStatus(
         input: GetPaymentStatusInput
     ): Promise<GetPaymentStatusOutput> {  
-        this.logger.info("================================================")
-        this.logger.info("RazorpayBase.getPaymentStatus")
-        this.logger.info(`input: ${JSON.stringify(input, null, 4)}`)
-
         if (!input.data || !input.data?.id) {            
             throw this.buildError(
               "No payment intent ID provided while getting payment status",
@@ -565,12 +479,13 @@ abstract class RazorpayBase extends AbstractPaymentProvider<RazorpayProviderConf
         switch (razorpayOrder.status) {
             // created' | 'authorized' | 'captured' | 'refunded' | 'failed'
 
-            
             case "created": {
-                paymentStatusResponse.status = PaymentSessionStatus.REQUIRES_MORE;                
+                paymentStatusResponse.status = PaymentSessionStatus.REQUIRES_MORE;          
+                break;      
             }
             case "paid": {
                 paymentStatusResponse.status = PaymentSessionStatus.AUTHORIZED;
+                break;
             }
             case "attempted": {
                 const status = await this.getRazorpayPaymentStatus(
@@ -578,21 +493,16 @@ abstract class RazorpayBase extends AbstractPaymentProvider<RazorpayProviderConf
                     attempedRazorpayPayments
                 );
                 paymentStatusResponse.status = status;
+                break;
             }
-            default:
-                paymentStatusResponse.status = PaymentSessionStatus.PENDING;
-
-            this.logger.info(`Payment Status Response: ${JSON.stringify(paymentStatusResponse, null, 4)}`)
-            this.logger.info("================================================")    
-            return paymentStatusResponse;                        
-
+            default: {
+                // default to pending, ignore other statuses
+            }                       
         }
+        return paymentStatusResponse;         
     }
 
     async initiatePayment(input: InitiatePaymentInput): Promise<InitiatePaymentOutput> {
-        this.logger.info("================================================")
-        this.logger.info("RazorpayBase.initiatePayment")
-        this.logger.info(`input: ${JSON.stringify(input, null, 4)}`)
         const { amount, currency_code, data, context } = input;
 
         if (!data?.extra) {
@@ -675,8 +585,6 @@ abstract class RazorpayBase extends AbstractPaymentProvider<RazorpayProviderConf
             ...intentRequestData
         };
 
-        this.logger.info(`Razorpay intent request: ${JSON.stringify(intentRequest, null, 4)}`);
-
         try {
             this.createOrUpdateRazorpayCustomer(
                 intentRequest,
@@ -694,7 +602,6 @@ abstract class RazorpayBase extends AbstractPaymentProvider<RazorpayProviderConf
         try {
             order_data = await this.razorpay_.orders.create({...intentRequest});
         } catch (e) {
-            this.logger.error(`error in creating order: ${JSON.stringify(e, null, 4)}`);
             throw this.buildError(
                 "An error occurred in InitiatePayment during the " +
                     "creation of the razorpay payment intent: " +
@@ -706,39 +613,21 @@ abstract class RazorpayBase extends AbstractPaymentProvider<RazorpayProviderConf
         const output: InitiatePaymentOutput = {
             id: order_data.id,
             data: { ...order_data, intentRequest: intentRequest }
-        }
-
-        this.logger.info(`Initiate Payment Output: ${JSON.stringify(output, null, 4)}`)
-
-        this.logger.info("================================================")                     
+        }                    
         return output;
     }
 
     async authorizePayment(input: AuthorizePaymentInput): Promise<AuthorizePaymentOutput> {
-        this.logger.info("================================================")
-        this.logger.info("RazorpayBase.authorizePayment")
-        this.logger.info(`input: ${JSON.stringify(input, null, 4)}`)
-    
-        const statusResponse = await this.getPaymentStatus(input)
-        this.logger.info(`Status Response: ${JSON.stringify(statusResponse, null, 4)}`)
-        this.logger.info("================================================")                
+        const statusResponse = await this.getPaymentStatus(input)           
         return statusResponse
     }
 
-    async cancelPayment(input: CancelPaymentInput): Promise<CancelPaymentOutput> {   
-        this.logger.info("================================================")
-        this.logger.info("RazorpayBase.cancelPayment")
-        this.logger.info(`input: ${JSON.stringify(input, null, 4)}`)
-        this.logger.info("================================================")                
+    async cancelPayment(input: CancelPaymentInput): Promise<CancelPaymentOutput> {                 
         const error = new MedusaError(ErrorCodes.UNSUPPORTED_OPERATION, "An error occurred in cancelPayment",  "Unable to cancel as razorpay doesn't support cancellation");        
         throw this.buildError("An error occurred in cancelPayment", error);
     }
 
     async capturePayment(input: CapturePaymentInput): Promise<CapturePaymentOutput> {
-        this.logger.info("================================================")
-        this.logger.info("RazorpayBase.capturePayment")
-        this.logger.info(`input: ${JSON.stringify(input, null, 4)}`)
-    
         const razorpayOrder: Orders.RazorpayOrder = input.data as unknown as Orders.RazorpayOrder;
         const razorpayOrderPayments: {
             entity: string;
@@ -775,25 +664,15 @@ abstract class RazorpayBase extends AbstractPaymentProvider<RazorpayProviderConf
 
         const capturePaymentOutput: CapturePaymentOutput = { 
             data: razorpayOrder as unknown as Record<string, unknown> 
-        };
-
-        this.logger.info(`Capture Payment Output: ${JSON.stringify(capturePaymentOutput, null, 4)}`)
-        this.logger.info("================================================")                 
+        };             
         return capturePaymentOutput
     }
 
-    async deletePayment(input: DeletePaymentInput): Promise<DeletePaymentOutput> {
-        this.logger.info("================================================")
-        this.logger.info("RazorpayBase.deletePayment")
-        this.logger.info(`input: ${JSON.stringify(input, null, 4)}`)
-        this.logger.info("================================================")          
+    async deletePayment(input: DeletePaymentInput): Promise<DeletePaymentOutput> {      
         return await this.cancelPayment(input)
     }
 
-    async refundPayment(input: RefundPaymentInput): Promise<RefundPaymentOutput> {   
-        this.logger.info("================================================")
-        this.logger.info("RazorpayBase.refundPayment")
-        this.logger.info(`input: ${JSON.stringify(input, null, 4)}`)          
+    async refundPayment(input: RefundPaymentInput): Promise<RefundPaymentOutput> {          
         if (!input.amount) {
             throw this.buildError(
                 "No refund amount provided",
@@ -850,16 +729,11 @@ abstract class RazorpayBase extends AbstractPaymentProvider<RazorpayProviderConf
             }
         }
 
-        const refundPaymentOutput: RefundPaymentOutput = { data: input.data as unknown as Record<string, unknown> }
-        this.logger.info(`Refund Payment Output: ${JSON.stringify(refundPaymentOutput, null, 4)}`)
-        this.logger.info("================================================")            
+        const refundPaymentOutput: RefundPaymentOutput = { data: input.data as unknown as Record<string, unknown> }         
         return refundPaymentOutput;
     }
 
     async retrievePayment(input: RetrievePaymentInput): Promise<RetrievePaymentOutput> {
-        this.logger.info("================================================")
-        this.logger.info("RazorpayBase.retrievePayment")
-        this.logger.info(`input: ${JSON.stringify(input, null, 4)}`)
         const data: Record<string, unknown> = input.data as Record<string, unknown>;
         let razorpayOrderIntent: Orders.RazorpayOrder | undefined = undefined;
 
@@ -881,15 +755,13 @@ abstract class RazorpayBase extends AbstractPaymentProvider<RazorpayProviderConf
                 this.buildError("An error occurred in retrievePayment", e);
             }
         }
-        const retrievePaymentOutput: RetrievePaymentOutput = { data: razorpayOrderIntent as unknown as Record<string, unknown> }
-        this.logger.info("================================================")                  
+        const retrievePaymentOutput: RetrievePaymentOutput = { 
+            data: razorpayOrderIntent as unknown as Record<string, unknown> 
+        }         
         return retrievePaymentOutput;
     }
 
     async updatePayment(input: UpdatePaymentInput): Promise<UpdatePaymentOutput> {
-        this.logger.info("================================================")
-        this.logger.info("RazorpayBase.updatePayment")
-        this.logger.info(`input: ${JSON.stringify(input, null, 4)}`)
         const { amount, currency_code, context } = input;
 
         if (!context?.customer) {
@@ -1011,21 +883,14 @@ abstract class RazorpayBase extends AbstractPaymentProvider<RazorpayProviderConf
             } catch (e) {
                 throw this.buildError("An error occurred in updatePayment", e);
             }
-        }
-
-        this.logger.info(`Initiate Payment Output: ${JSON.stringify(initiatePaymentOutput, null, 4)}`)
-        this.logger.info("================================================")                  
+        }              
         return initiatePaymentOutput;
     }
 
     async updatePaymentData(
         sessionId: string,
         data: Record<string, unknown>
-    ): Promise<UpdatePaymentOutput> {
-        this.logger.info("================================================")
-        this.logger.info("RazorpayBase.updatePaymentData")
-        this.logger.info(`sessionId: ${sessionId}`)
-        this.logger.info(`input: ${JSON.stringify(data, null, 4)}`)       
+    ): Promise<UpdatePaymentOutput> {   
         // Prevent from updating the amount from here as it should go through
         // the updatePayment method to perform the correct logic
         if (data.amount || data.currency) {
@@ -1061,10 +926,7 @@ abstract class RazorpayBase extends AbstractPaymentProvider<RazorpayProviderConf
                 "unable to update payment data in razorpay: " + JSON.stringify(e, null, 4)
             );
             throw this.buildError("An error occurred in updatePaymentData", e);
-        }
-
-        this.logger.info(`Razorpay Payment: ${JSON.stringify(razorpayPaymentOutput || {}, null, 4)}`)
-        this.logger.info("================================================")           
+        }       
         return razorpayPaymentOutput;
     }
     /*
@@ -1076,11 +938,7 @@ abstract class RazorpayBase extends AbstractPaymentProvider<RazorpayProviderConf
    * @return {object} Razorpay Webhook event
    */
 
-    constructWebhookEvent(data, signature): boolean {
-        this.logger.info("================================================")
-        this.logger.info("RazorpayBase.constructWebhookEvent")
-        this.logger.info(`data: ${JSON.stringify(data, null, 4)}`)
-        this.logger.info(`signature: ${signature}`)                   
+    constructWebhookEvent(data, signature): boolean {                
         if (!this.options_.key_id) {
             throw new MedusaError(
                 MedusaErrorTypes.INVALID_ARGUMENT,
@@ -1093,9 +951,6 @@ abstract class RazorpayBase extends AbstractPaymentProvider<RazorpayProviderConf
             signature,
             this.options_.webhook_secret,
         );
-
-        this.logger.info(`isValidWebhookSignature: ${isValidWebhookSignature}`)
-        this.logger.info("================================================")
         return isValidWebhookSignature;        
     }
 
@@ -1121,22 +976,12 @@ abstract class RazorpayBase extends AbstractPaymentProvider<RazorpayProviderConf
     async getWebhookActionAndData(
         webhookData: ProviderWebhookPayload["payload"]
     ): Promise<WebhookActionResult> {
-        this.logger.info("================================================")
-        this.logger.info("RazorpayBase.getWebhookActionAndData")
-        this.logger.info(`webhookData: ${JSON.stringify(webhookData, null, 4)}`)
-  
         const webhookSignature = webhookData.headers["x-razorpay-signature"];
 
         const webhookSecret =
             this.options_?.webhook_secret ||
             process.env.RAZORPAY_WEBHOOK_SECRET ||
             process.env.RAZORPAY_TEST_WEBHOOK_SECRET;
-
-        this.logger.info(
-            `Received Razorpay webhook body as object : ${JSON.stringify(
-                webhookData.data
-            )}`
-        );
         try {
             const validationResponse = Razorpay.validateWebhookSignature(
                 webhookData.rawData.toString(),
@@ -1205,11 +1050,7 @@ abstract class RazorpayBase extends AbstractPaymentProvider<RazorpayProviderConf
                 webhookActionResult = { action: PaymentActions.NOT_SUPPORTED };
             }
                 
-        }
-
-        this.logger.info(`Webhook Action Result: ${JSON.stringify(webhookActionResult, null, 4)}`)
-
-        this.logger.info("================================================")   
+        } 
         return webhookActionResult;            
     }
 }

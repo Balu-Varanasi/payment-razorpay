@@ -47,9 +47,9 @@ import {
 import { ErrorCodes, RazorpayProviderConfig, Options } from "../../types";
 
 let config: RazorpayProviderConfig & Options = {
-    key_id: "test",
-    key_secret: "test",
-    razorpay_account: "test",
+    key_id: process.env.RAZORPAY_TEST_KEY_ID ?? "test",
+    key_secret: process.env.RAZORPAY_TEST_KEY_SECRET ?? "test",
+    razorpay_account: process.env.RAZORPAY_TEST_ACCOUNT ?? "test",
     automatic_expiry_period: 30,
     manual_expiry_period: 20,
     refund_speed: "normal",
@@ -73,7 +73,7 @@ const container = {
     },
     cartService: {
         retrieve(id: string): any {
-            return { id: "test-cart", billing_address: { phone: "12345" } };
+            return { id: id, billing_address: { phone: "12345" } };
         }
     },
     customerService: {
@@ -90,12 +90,7 @@ const container = {
     }
 };
 
-config = {
-    ...config,
-    key_id: process.env.RAZORPAY_ID!,
-    key_secret: process.env.RAZORPAY_SECRET!,
-    razorpay_account: process.env.RAZORPAY_ACCOUNT!
-};
+
 let testPaymentSession;
 let razorpayTest: RazorpayTest;
 
@@ -117,10 +112,10 @@ describe("RazorpayTest", () => {
         if (isMocksEnabled()) {
             it("should return the correct status", async () => {
                 let output: GetPaymentStatusOutput;
-
-                output = await razorpayTest.getPaymentStatus({
+                let input: GetPaymentStatusInput = {
                     data: { id: PaymentIntentDataByStatus.CREATED.id }
-                });
+                };
+                output = await razorpayTest.getPaymentStatus(input);
                 expect(output.status).toBe(PaymentSessionStatus.PENDING);
 
                 output = await razorpayTest.getPaymentStatus({
@@ -182,10 +177,10 @@ describe("RazorpayTest", () => {
             if (isMocksEnabled()) {
                 expect(RazorpayMock.orders.create).toHaveBeenCalled();
 
-                /* expect(RazorpayMock.customers.create).toHaveBeenCalledWith({
-        email: initiatePaymentContextWithExistingCustomer.email,
-        name: "test, customer",
-      });*/
+                expect(RazorpayMock.customers.create).toHaveBeenCalledWith({
+                    email: initiatePaymentContextWithExistingCustomer.data?.email,
+                    name: "test, customer",
+                });
 
                 expect(RazorpayMock.orders.create).toHaveBeenCalled();
                 /* expect(RazorpayMock.orders.create).toHaveBeenCalledWith(
@@ -509,7 +504,6 @@ describe("RazorpayTest", () => {
         });
 
         it("should succeed", async () => {
-            container.logger.debug("refundPaymentSuccessData", `${JSON.stringify(refundPaymentSuccessData, null, 4)}`);
             const result = await razorpayTest.refundPayment(
                 isMocksEnabled()
                     ? retrievePaymentInput
@@ -698,12 +692,12 @@ describe("RazorpayTest", () => {
                         expect(1).toBe(1);
                         console.log("test not valid in mocked mode");
                         // expect(RazorpayMock.orders.edit).toHaveBeenCalled();
-                        /* expect(RazorpayMock.orders.edit).toHaveBeenCalledWith(
+                        expect(RazorpayMock.orders.edit).toHaveBeenCalledWith(
           updatePaymentContextWithDifferentAmount.paymentSessionData.id,
           {
             amount: updatePaymentContextWithDifferentAmount.amount,
           }
-        );*/
+        );
                     }
                     expect(result).toMatchObject({
                         session_data: {

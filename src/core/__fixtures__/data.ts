@@ -46,7 +46,7 @@ export const PaymentIntentDataByStatus = {
 const rawStoreCart: any = {
     "id": "cart_01JNGBJJXQ8HQ4J4CPKC7HZRT2",
     "currency_code": "inr",
-    "email": "test@test.net",
+    "email": EXISTING_CUSTOMER_EMAIL,
     "region_id": "reg_01JMMHV5RMMT3S092P136WHM92",
     "created_at": "2025-03-04T10:35:11.160Z",
     "updated_at": "2025-03-04T10:35:59.332Z",
@@ -256,7 +256,7 @@ const rawStoreCart: any = {
     },
     "customer": {
         "id": "cus_01JMVM4YRAFC6RQ8Y1HVB34D3X",
-        "email": "test@test.net",
+        "email": EXISTING_CUSTOMER_EMAIL,
         "groups": []
     },
     "region": {

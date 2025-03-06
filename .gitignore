@@ -5,4 +5,7 @@ yarn.lock
 pnpm-lock.yaml
 .turbo/
 .medusa/
+.env
 *.tgz
+.vscode/
+.idea/
