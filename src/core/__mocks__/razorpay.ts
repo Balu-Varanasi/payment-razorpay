@@ -1,18 +1,23 @@
-import { PaymentIntentDataByStatus } from "../__fixtures__/data";
-import Razorpay from "razorpay";
-import { ErrorCodes, ErrorIntentStatus } from "../../types";
-import { jest } from "@jest/globals";
-export const WRONG_CUSTOMER_EMAIL = "wrong@test.fr";
-export const EXISTING_CUSTOMER_EMAIL = "right@test.fr";
-export const RAZORPAY_ID = isMocksEnabled() ? "test" : process.env.RAZORPAY_ID;
-export const PARTIALLY_FAIL_INTENT_ID = "partially_unknown";
-export const FAIL_INTENT_ID = "unknown";
-import { Customers } from "razorpay/dist/types/customers";
 import dotenv from "dotenv";
+import Razorpay from "razorpay";
+import { Customers } from "razorpay/dist/types/customers";
+import { jest } from "@jest/globals";
+
+import { PaymentIntentDataByStatus } from "../__fixtures__/data";
+import { ErrorCodes, ErrorIntentStatus } from "../../types";
 
 dotenv.config();
 
 const mockEnabled = process.env.DISABLE_MOCKS == "true" ? false : true;
+
+export const WRONG_CUSTOMER_EMAIL = "wrong@test.net";
+export const EXISTING_CUSTOMER_ID = 'cus_01JMW6SDES9T1SNEMTJFNFGYAK';
+export const EXISTING_CUSTOMER_EMAIL = "vabasu@gmail.com";
+export const EXISTING_CUSTOMER_CONTACT = "+919876543210";
+export const EXISTING_SESSION_ID = "session_01JMW6SDES9T1SNEMTJFNFGYAK";
+export const RAZORPAY_ID = isMocksEnabled() ? "test" : process.env.RAZORPAY_ID;
+export const PARTIALLY_FAIL_INTENT_ID = "partially_unknown";
+export const FAIL_INTENT_ID = "unknown";
 
 export function isMocksEnabled(): boolean {
     if (mockEnabled) {
@@ -21,7 +26,7 @@ export function isMocksEnabled(): boolean {
     return mockEnabled;
 }
 
-export const RazorpayMock = {
+export const RazorpayMock: any = {
     orders: {
         fetch: jest.fn().mockImplementation(async (orderId) => {
             if (orderId === FAIL_INTENT_ID) {
@@ -177,7 +182,7 @@ export const RazorpayMock = {
                 created_at: 0,
                 name: "test customer",
                 email: EXISTING_CUSTOMER_EMAIL,
-                contact: "9876543210"
+                contact: EXISTING_CUSTOMER_CONTACT
             };
             return Promise.resolve(customer);
         }),
@@ -188,13 +193,13 @@ export const RazorpayMock = {
                 created_at: 0,
                 name: "test customer",
                 email: EXISTING_CUSTOMER_EMAIL,
-                contact: "9876543210"
+                contact: EXISTING_CUSTOMER_CONTACT
             };
             return Promise.resolve(customer);
         })
     }
 };
 
-const razorpay = isMocksEnabled() ? jest.fn(() => RazorpayMock) : Razorpay;
+const razorpay: Razorpay | typeof RazorpayMock = isMocksEnabled() ? jest.fn(() => RazorpayMock) : Razorpay;
 
 export default razorpay;
