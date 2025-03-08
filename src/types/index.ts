@@ -22,8 +22,7 @@ export interface RazorpayOptions {
     payment_description?: string;
 }
 
-export interface PaymentIntentOptions
-    extends Orders.RazorpayOrderCreateRequestBody {
+export interface PaymentIntentOptions extends Orders.RazorpayOrderCreateRequestBody {
     capture_method?: "automatic" | "manual";
     setup_future_usage?: "on_session" | "off_session";
     payment_method_types?: string[];
@@ -31,16 +30,16 @@ export interface PaymentIntentOptions
 
 export const ErrorCodes = {
     PAYMENT_INTENT_UNEXPECTED_STATE: "payment_intent_unexpected_state",
-    UNSUPPORTED_OPERATION: "payment_intent_operation_unsupported"
+    UNSUPPORTED_OPERATION: "payment_intent_operation_unsupported",
 };
 
 export const ErrorIntentStatus = {
     SUCCEEDED: "succeeded",
-    CANCELED: "canceled"
+    CANCELED: "canceled",
 };
 
 export const PaymentProviderKeys = {
-    RAZORPAY: "razorpay"
+    RAZORPAY: "razorpay",
 };
 
 export interface RazorpayProviderConfig {

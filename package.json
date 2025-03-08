@@ -15,25 +15,23 @@
     "!dist/**/__fixtures__"
   ],
   "engines": {
-    "node": "22.14.0",
-    "npm": "10.9.2"
+    "node": "22.14.0"
   },
-  "packageManager": "npm@10.9.2",
   "author": "Medusa",
   "license": "MIT",
   "scripts": {
     "test": "jest --passWithNoTests src",
     "clean": "rimraf *.tgz dist",
-    "build": "pnpm run clean &&tsc --build ./tsconfig.json",
+    "build": "yarn run clean && tsc --build ./tsconfig.json",
     "watch": "tsc --watch",
     "lint": "eslint ./ --fix",
     "format": "prettier --write \"**/*.{js,jsx,json,md}\"",
-    "prepack": "pnpm run build"
+    "prepack": "yarn run build"
   },
   "husky": {
     "hooks": {
       "pre-commit": "lint-staged",
-      "pre-push": "npm test"
+      "pre-push": "yarn test"
     }
   },
   "lint-staged": {
@@ -55,10 +53,6 @@
   },
   "devDependencies": {
     "@jest/globals": "^29.2.6",
-    "@medusajs/admin-sdk": "latest",
-    "@medusajs/cli": "latest",
-    "@medusajs/framework": "^2.5.1",
-    "@medusajs/medusa": "latest",
     "@swc/core": "^1.7.28",
     "@swc/jest": "^0.2.36",
     "@typescript-eslint/eslint-plugin": "^5.4.0",
@@ -84,16 +78,13 @@
     "ts-node": "^10.9.2",
     "typescript": "^5.6.2"
   },
-  "peerDependencies": {
-    "@medusajs/admin-sdk": "^2.4.0",
-    "@medusajs/cli": "^2.4.0",
-    "@medusajs/framework": "^2.4.0",
-    "@medusajs/medusa": "^2.4.0",
-    "awilix": "^8.0.1"
-  },
   "dependencies": {
-    "@medusajs/utils": "^2.5.1",
-    "razorpay": "^2.9.5"
+    "@medusajs/admin-sdk": "^2.6.0",
+    "@medusajs/cli": "^2.6.0",
+    "@medusajs/framework": "^2.6.0",
+    "@medusajs/medusa": "^2.6.0",
+    "razorpay": "^2.9.5",
+    "awilix": "^8.0.1"
   },
   "gitHead": "81a7ff73d012fda722f6e9ef0bd9ba0232d37808",
   "keywords": [

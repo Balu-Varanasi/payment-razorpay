@@ -1,193 +1,175 @@
+import { beforeAll, beforeEach, describe, expect, it, jest } from "@jest/globals";
 import {
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  jest,
-} from "@jest/globals"
+    AuthorizePaymentOutput,
+    CapturePaymentOutput,
+    CustomerDTO,
+    GetPaymentStatusInput,
+    GetPaymentStatusOutput,
+    InitiatePaymentInput,
+    InitiatePaymentOutput,
+} from "@medusajs/framework/types";
+import { PaymentSessionStatus } from "@medusajs/framework/utils";
+import dotenv from "dotenv";
 import {
-  AuthorizePaymentOutput,
-  CapturePaymentOutput,
-  CustomerDTO,
-  GetPaymentStatusInput,
-  GetPaymentStatusOutput,
-  InitiatePaymentInput,
-  InitiatePaymentOutput,
-} from "@medusajs/framework/types"
-import { PaymentSessionStatus } from "@medusajs/framework/utils"
-import dotenv from "dotenv"
-import {
-  authorizePaymentSuccessData,
-  cancelPaymentFailData,
-  cancelPaymentPartiallyFailData,
-  cancelPaymentSuccessData,
-  capturePaymentContextSuccessData,
-  deletePaymentFailData,
-  deletePaymentPartiallyFailData,
-  deletePaymentSuccessData,
-  initiatePaymentContextWithExistingCustomer,
-  initiatePaymentContextWithExistingCustomerRazorpayId,
-  retrievePaymentInput,
-  retrievePaymentSuccessData,
-  updatePaymentContextWithDifferentAmount,
-  updatePaymentDataWithoutAmountData,
-  updatePaymentDataWithoutAmountDataNoNotes,
-} from "../__fixtures__/data"
+    authorizePaymentSuccessData,
+    cancelPaymentFailData,
+    cancelPaymentPartiallyFailData,
+    cancelPaymentSuccessData,
+    capturePaymentContextSuccessData,
+    deletePaymentFailData,
+    deletePaymentPartiallyFailData,
+    deletePaymentSuccessData,
+    initiatePaymentContextWithExistingCustomer,
+    initiatePaymentContextWithExistingCustomerRazorpayId,
+    retrievePaymentInput,
+    retrievePaymentSuccessData,
+    updatePaymentContextWithDifferentAmount,
+    updatePaymentDataWithoutAmountData,
+    updatePaymentDataWithoutAmountDataNoNotes,
+} from "../__fixtures__/data";
 
-import { ErrorCodes, Options, RazorpayProviderConfig } from "../../types"
-import { PaymentIntentDataByStatus } from "../__fixtures__/data"
-import { RazorpayTest } from "../__fixtures__/razorpay-test"
-import {
-  EXISTING_CUSTOMER_ID,
-  RAZORPAY_ID,
-  RazorpayMock,
-  isMocksEnabled,
-} from "../__mocks__/razorpay"
+import { ErrorCodes, Options, RazorpayProviderConfig } from "../../types";
+import { PaymentIntentDataByStatus } from "../__fixtures__/data";
+import { RazorpayTest } from "../__fixtures__/razorpay-test";
+import { EXISTING_CUSTOMER_ID, RAZORPAY_ID, RazorpayMock, isMocksEnabled } from "../__mocks__/razorpay";
 
 let config: RazorpayProviderConfig & Options = {
-  key_id: process.env.RAZORPAY_TEST_KEY_ID ?? "test",
-  key_secret: process.env.RAZORPAY_TEST_KEY_SECRET ?? "test",
-  razorpay_account: process.env.RAZORPAY_TEST_ACCOUNT ?? "test",
-  automatic_expiry_period: 30,
-  manual_expiry_period: 20,
-  refund_speed: "normal",
-  webhook_secret: "test",
-  auto_capture: false,
-  providers: [],
-  // intentionally left empty to avoid type errors.
-  database: {} as any,
-}
+    key_id: process.env.RAZORPAY_TEST_KEY_ID ?? "test",
+    key_secret: process.env.RAZORPAY_TEST_KEY_SECRET ?? "test",
+    razorpay_account: process.env.RAZORPAY_TEST_ACCOUNT ?? "test",
+    automatic_expiry_period: 30,
+    manual_expiry_period: 20,
+    refund_speed: "normal",
+    webhook_secret: "test",
+    auto_capture: false,
+    providers: [],
+    // intentionally left empty to avoid type errors.
+    database: {} as any,
+};
 
 if (!isMocksEnabled()) {
-  dotenv.config()
+    dotenv.config();
 }
 
 const container = {
-  logger: {
-    error: console.error,
-    info: console.info,
-    warn: console.warn,
-    debug: console.log,
-  },
-  cartService: {
-    retrieve(id: string): any {
-      return { id: id, billing_address: { phone: "12345" } }
+    logger: {
+        error: console.error,
+        info: console.info,
+        warn: console.warn,
+        debug: console.log,
     },
-  },
-  customerService: {
-    retrieve: (id: string): any => {
-      return { billing_address: { phone: "12345" } }
+    cartService: {
+        retrieve(id: string): any {
+            return { id: id, billing_address: { phone: "12345" } };
+        },
     },
-    update: (id: string, data): any => {
-      const customer: CustomerDTO = {
-        id,
-        ...data,
-      }
-      return customer
+    customerService: {
+        retrieve: (id: string): any => {
+            return { billing_address: { phone: "12345" } };
+        },
+        update: (id: string, data): any => {
+            const customer: CustomerDTO = {
+                id,
+                ...data,
+            };
+            return customer;
+        },
     },
-  },
-}
+};
 
-let testPaymentSession
-let razorpayTest: RazorpayTest
+let testPaymentSession;
+let razorpayTest: RazorpayTest;
 
 describe("RazorpayTest", () => {
-  describe("getPaymentStatus", function () {
-    beforeAll(async () => {
-      if (!isMocksEnabled()) {
-        jest.requireActual("razorpay")
-      }
+    describe("getPaymentStatus", function () {
+        beforeAll(async () => {
+            if (!isMocksEnabled()) {
+                jest.requireActual("razorpay");
+            }
 
-      const scopedContainer = { ...container }
-      razorpayTest = new RazorpayTest(
-        scopedContainer,
-        config as unknown as RazorpayProviderConfig & Options
-      )
-    })
+            const scopedContainer = { ...container };
+            razorpayTest = new RazorpayTest(scopedContainer, config as unknown as RazorpayProviderConfig & Options);
+        });
 
-    beforeEach(() => {
-      jest.clearAllMocks()
-    })
+        beforeEach(() => {
+            jest.clearAllMocks();
+        });
 
-    if (isMocksEnabled()) {
-      it("should return the correct status", async () => {
-        let output: GetPaymentStatusOutput
-        let input: GetPaymentStatusInput = {
-          data: { id: PaymentIntentDataByStatus.CREATED.id },
+        if (isMocksEnabled()) {
+            it("should return the correct status", async () => {
+                let output: GetPaymentStatusOutput;
+                let input: GetPaymentStatusInput = {
+                    data: { id: PaymentIntentDataByStatus.CREATED.id },
+                };
+                output = await razorpayTest.getPaymentStatus(input);
+                expect(output.status).toBe(PaymentSessionStatus.PENDING);
+
+                output = await razorpayTest.getPaymentStatus({
+                    data: { id: PaymentIntentDataByStatus.CREATED.id },
+                });
+                expect(output.status).toBe(PaymentSessionStatus.PENDING);
+
+                output = await razorpayTest.getPaymentStatus({
+                    data: { id: PaymentIntentDataByStatus.ATTEMPTED.id },
+                });
+                expect(output.status).toBe(PaymentSessionStatus.AUTHORIZED);
+
+                output = await razorpayTest.getPaymentStatus({
+                    data: { id: "unknown-id" },
+                });
+
+                expect(output.status).toBe(PaymentSessionStatus.PENDING);
+            });
+        } else {
+            it("should return the correct status", async () => {
+                const initiatePaymentInput: InitiatePaymentInput = {
+                    currency_code: initiatePaymentContextWithExistingCustomer.currency_code,
+                    amount: initiatePaymentContextWithExistingCustomer.amount,
+                    data: initiatePaymentContextWithExistingCustomer.data,
+                    context: initiatePaymentContextWithExistingCustomer.context,
+                };
+                const initiatePaymentOutput: InitiatePaymentOutput = await razorpayTest.initiatePayment(
+                    initiatePaymentInput
+                );
+
+                const paymentStatusInput: GetPaymentStatusInput = {
+                    data: initiatePaymentOutput.data,
+                    context: {},
+                };
+
+                const paymentStatusOutput: GetPaymentStatusOutput = await razorpayTest.getPaymentStatus(
+                    paymentStatusInput
+                );
+                expect(paymentStatusOutput.status).toBe(PaymentSessionStatus.REQUIRES_MORE);
+            });
         }
-        output = await razorpayTest.getPaymentStatus(input)
-        expect(output.status).toBe(PaymentSessionStatus.PENDING)
+    });
 
-        output = await razorpayTest.getPaymentStatus({
-          data: { id: PaymentIntentDataByStatus.CREATED.id },
-        })
-        expect(output.status).toBe(PaymentSessionStatus.PENDING)
+    describe("initiatePayment", function () {
+        let razorpayTest: RazorpayTest;
 
-        output = await razorpayTest.getPaymentStatus({
-          data: { id: PaymentIntentDataByStatus.ATTEMPTED.id },
-        })
-        expect(output.status).toBe(PaymentSessionStatus.AUTHORIZED)
+        beforeAll(async () => {
+            const scopedContainer = { ...container };
+            razorpayTest = new RazorpayTest(scopedContainer, config);
+        });
 
-        output = await razorpayTest.getPaymentStatus({
-          data: { id: "unknown-id" },
-        })
+        beforeEach(() => {
+            jest.clearAllMocks();
+        });
 
-        expect(output.status).toBe(PaymentSessionStatus.PENDING)
-      })
-    } else {
-      it("should return the correct status", async () => {
-        const initiatePaymentInput: InitiatePaymentInput = {
-          currency_code:
-            initiatePaymentContextWithExistingCustomer.currency_code,
-          amount: initiatePaymentContextWithExistingCustomer.amount,
-          data: initiatePaymentContextWithExistingCustomer.data,
-          context: initiatePaymentContextWithExistingCustomer.context,
-        }
-        const initiatePaymentOutput: InitiatePaymentOutput =
-          await razorpayTest.initiatePayment(initiatePaymentInput)
+        it("should succeed with an existing customer but no razorpay id", async () => {
+            const result = await razorpayTest.initiatePayment(initiatePaymentContextWithExistingCustomer as any);
 
-        const paymentStatusInput: GetPaymentStatusInput = {
-          data: initiatePaymentOutput.data,
-          context: {},
-        }
+            if (isMocksEnabled()) {
+                expect(RazorpayMock.orders.create).toHaveBeenCalled();
 
-        const paymentStatusOutput: GetPaymentStatusOutput =
-          await razorpayTest.getPaymentStatus(paymentStatusInput)
-        expect(paymentStatusOutput.status).toBe(
-          PaymentSessionStatus.REQUIRES_MORE
-        )
-      })
-    }
-  })
+                expect(RazorpayMock.customers.create).toHaveBeenCalledWith({
+                    email: initiatePaymentContextWithExistingCustomer.data?.email,
+                    name: "test, customer",
+                });
 
-  describe("initiatePayment", function () {
-    let razorpayTest: RazorpayTest
-
-    beforeAll(async () => {
-      const scopedContainer = { ...container }
-      razorpayTest = new RazorpayTest(scopedContainer, config)
-    })
-
-    beforeEach(() => {
-      jest.clearAllMocks()
-    })
-
-    it("should succeed with an existing customer but no razorpay id", async () => {
-      const result = await razorpayTest.initiatePayment(
-        initiatePaymentContextWithExistingCustomer as any
-      )
-
-      if (isMocksEnabled()) {
-        expect(RazorpayMock.orders.create).toHaveBeenCalled()
-
-        expect(RazorpayMock.customers.create).toHaveBeenCalledWith({
-          email: initiatePaymentContextWithExistingCustomer.data?.email,
-          name: "test, customer",
-        })
-
-        expect(RazorpayMock.orders.create).toHaveBeenCalled()
-        /* expect(RazorpayMock.orders.create).toHaveBeenCalledWith(
+                expect(RazorpayMock.orders.create).toHaveBeenCalled();
+                /* expect(RazorpayMock.orders.create).toHaveBeenCalledWith(
           expect.objectContaining({
             description: undefined,
             amount: initiatePaymentContextWithExistingCustomer.amount,
@@ -199,31 +181,29 @@ describe("RazorpayTest", () => {
             capture_method: "manual",
           })
         );*/
-      }
+            }
 
-      expect(result).toEqual(
-        expect.objectContaining({
-          session_data: expect.any(Object),
-          update_requests: {
-            customer_metadata: {
-              razorpay_id: isMocksEnabled()
-                ? RAZORPAY_ID
-                : expect.stringContaining("cus"),
-            },
-          },
-        })
-      )
-    })
+            expect(result).toEqual(
+                expect.objectContaining({
+                    session_data: expect.any(Object),
+                    update_requests: {
+                        customer_metadata: {
+                            razorpay_id: isMocksEnabled() ? RAZORPAY_ID : expect.stringContaining("cus"),
+                        },
+                    },
+                })
+            );
+        });
 
-    it("should succeed with an existing customer with an existing razorpay id", async () => {
-      const result = await razorpayTest.initiatePayment(
-        initiatePaymentContextWithExistingCustomerRazorpayId as any
-      )
-      if (isMocksEnabled()) {
-        expect(RazorpayMock.customers.create).not.toHaveBeenCalled()
+        it("should succeed with an existing customer with an existing razorpay id", async () => {
+            const result = await razorpayTest.initiatePayment(
+                initiatePaymentContextWithExistingCustomerRazorpayId as any
+            );
+            if (isMocksEnabled()) {
+                expect(RazorpayMock.customers.create).not.toHaveBeenCalled();
 
-        expect(RazorpayMock.orders.create).toHaveBeenCalled()
-        /* expect(RazorpayMock.orders.create).toMatchObject({
+                expect(RazorpayMock.orders.create).toHaveBeenCalled();
+                /* expect(RazorpayMock.orders.create).toMatchObject({
           description: undefined,
           amount: initiatePaymentContextWithExistingCustomer.amount,
           currency: initiatePaymentContextWithExistingCustomer.currency_code,
@@ -232,23 +212,23 @@ describe("RazorpayTest", () => {
           },
           capture_method: "manual",
         });*/
-      }
-      expect(result).toMatchObject(
-        !isMocksEnabled()
-          ? {
-              session_data: expect.any(Object),
-              update_requests: expect.any(Object),
             }
-          : {
-              session_data: expect.any(Object),
+            expect(result).toMatchObject(
+                !isMocksEnabled()
+                    ? {
+                          session_data: expect.any(Object),
+                          update_requests: expect.any(Object),
+                      }
+                    : {
+                          session_data: expect.any(Object),
+                      }
+            );
+            if (!isMocksEnabled()) {
+                expect((result as any).session_data.id).toBeDefined();
             }
-      )
-      if (!isMocksEnabled()) {
-        expect((result as any).session_data.id).toBeDefined()
-      }
-    })
+        });
 
-    /* it("should fail on customer creation", async () => {
+        /* it("should fail on customer creation", async () => {
       /const result = await razorpayTest.initiatePayment(
         initiatePaymentContextWithWrongEmail as any
       );
@@ -268,7 +248,7 @@ describe("RazorpayTest", () => {
       });
     });*/
 
-    /* it("should fail on payment intents creation", async () => {
+        /* it("should fail on payment intents creation", async () => {
       const result = await razorpayTest.initiatePayment(
         initiatePaymentContextWithFailIntentCreation as any
       );
@@ -303,132 +283,125 @@ describe("RazorpayTest", () => {
         detail: "Error",
       });
     });*/
-  })
+    });
 
-  describe("authorizePayment", function () {
-    let razorpayTest: RazorpayTest
+    describe("authorizePayment", function () {
+        let razorpayTest: RazorpayTest;
 
-    beforeAll(async () => {
-      const scopedContainer = { ...container }
-      razorpayTest = new RazorpayTest(scopedContainer, config)
-    })
+        beforeAll(async () => {
+            const scopedContainer = { ...container };
+            razorpayTest = new RazorpayTest(scopedContainer, config);
+        });
 
-    beforeEach(() => {
-      jest.clearAllMocks()
-    })
+        beforeEach(() => {
+            jest.clearAllMocks();
+        });
 
-    it("should succeed", async () => {
-      const initiatePaymentContext: InitiatePaymentInput = {
-        currency_code: initiatePaymentContextWithExistingCustomer.currency_code,
-        amount: initiatePaymentContextWithExistingCustomer.amount,
-        data: initiatePaymentContextWithExistingCustomer.data,
-        context: initiatePaymentContextWithExistingCustomer.context,
-      }
-      if (!isMocksEnabled()) {
-        testPaymentSession = await razorpayTest.initiatePayment(
-          initiatePaymentContext
-        )
-      }
+        it("should succeed", async () => {
+            const initiatePaymentContext: InitiatePaymentInput = {
+                currency_code: initiatePaymentContextWithExistingCustomer.currency_code,
+                amount: initiatePaymentContextWithExistingCustomer.amount,
+                data: initiatePaymentContextWithExistingCustomer.data,
+                context: initiatePaymentContextWithExistingCustomer.context,
+            };
+            if (!isMocksEnabled()) {
+                testPaymentSession = await razorpayTest.initiatePayment(initiatePaymentContext);
+            }
 
-      const authorizePaymentOutput: AuthorizePaymentOutput =
-        await razorpayTest.authorizePayment(
-          isMocksEnabled()
-            ? authorizePaymentSuccessData
-            : {
-                data: testPaymentSession.session_data,
-              }
-        )
+            const authorizePaymentOutput: AuthorizePaymentOutput = await razorpayTest.authorizePayment(
+                isMocksEnabled()
+                    ? authorizePaymentSuccessData
+                    : {
+                          data: testPaymentSession.session_data,
+                      }
+            );
 
-      expect(authorizePaymentOutput).toMatchObject({
-        data: isMocksEnabled()
-          ? authorizePaymentSuccessData.data?.id
-          : {
-              id: expect.stringContaining("order_"),
-            },
-        status: isMocksEnabled()
-          ? PaymentSessionStatus.AUTHORIZED
-          : PaymentSessionStatus.REQUIRES_MORE,
-      })
-    })
-  })
+            expect(authorizePaymentOutput).toMatchObject({
+                data: isMocksEnabled()
+                    ? authorizePaymentSuccessData.data?.id
+                    : {
+                          id: expect.stringContaining("order_"),
+                      },
+                status: isMocksEnabled() ? PaymentSessionStatus.AUTHORIZED : PaymentSessionStatus.REQUIRES_MORE,
+            });
+        });
+    });
 
-  describe("cancelPayment", function () {
-    beforeAll(async () => {
-      const scopedContainer = { ...container }
-      razorpayTest = new RazorpayTest(scopedContainer, config)
-    })
+    describe("cancelPayment", function () {
+        beforeAll(async () => {
+            const scopedContainer = { ...container };
+            razorpayTest = new RazorpayTest(scopedContainer, config);
+        });
 
-    beforeEach(() => {
-      jest.clearAllMocks()
-    })
+        beforeEach(() => {
+            jest.clearAllMocks();
+        });
 
-    it("should succeed", async () => {
-      const result = await razorpayTest.cancelPayment(cancelPaymentSuccessData)
+        it("should succeed", async () => {
+            const result = await razorpayTest.cancelPayment(cancelPaymentSuccessData);
 
-      expect(result).toEqual({
-        code: ErrorCodes.UNSUPPORTED_OPERATION,
-        error: "Unable to cancel as razorpay doesn't support cancellation",
-      })
-    })
+            expect(result).toEqual({
+                code: ErrorCodes.UNSUPPORTED_OPERATION,
+                error: "Unable to cancel as razorpay doesn't support cancellation",
+            });
+        });
 
-    it("should fail on intent cancellation but still return the intent", async () => {
-      const result = await razorpayTest.cancelPayment(
-        cancelPaymentPartiallyFailData
-      )
+        it("should fail on intent cancellation but still return the intent", async () => {
+            const result = await razorpayTest.cancelPayment(cancelPaymentPartiallyFailData);
 
-      expect(result).toEqual({
-        code: ErrorCodes.UNSUPPORTED_OPERATION,
-        error: "Unable to cancel as razorpay doesn't support cancellation",
-      })
-    })
+            expect(result).toEqual({
+                code: ErrorCodes.UNSUPPORTED_OPERATION,
+                error: "Unable to cancel as razorpay doesn't support cancellation",
+            });
+        });
 
-    it("should fail on intent cancellation", async () => {
-      const result = await razorpayTest.cancelPayment(cancelPaymentFailData)
+        it("should fail on intent cancellation", async () => {
+            const result = await razorpayTest.cancelPayment(cancelPaymentFailData);
 
-      /* expect(result).toEqual({
+            /* expect(result).toEqual({
         error: "An error occurred in cancelPayment",
         code: "",
         detail: "Error",
       });*/
-      expect(result).toEqual({
-        code: ErrorCodes.UNSUPPORTED_OPERATION,
-        error: "Unable to cancel as razorpay doesn't support cancellation",
-      })
-    })
-  })
+            expect(result).toEqual({
+                code: ErrorCodes.UNSUPPORTED_OPERATION,
+                error: "Unable to cancel as razorpay doesn't support cancellation",
+            });
+        });
+    });
 
-  describe("capturePayment", function () {
-    beforeAll(async () => {
-      const scopedContainer = { ...container }
-      razorpayTest = new RazorpayTest(scopedContainer, config)
-    })
+    describe("capturePayment", function () {
+        beforeAll(async () => {
+            const scopedContainer = { ...container };
+            razorpayTest = new RazorpayTest(scopedContainer, config);
+        });
 
-    beforeEach(() => {
-      jest.clearAllMocks()
-    })
+        beforeEach(() => {
+            jest.clearAllMocks();
+        });
 
-    it("should succeed", async () => {
-      const result: CapturePaymentOutput = await razorpayTest.capturePayment(
-        isMocksEnabled()
-          ? {
-              data: capturePaymentContextSuccessData.data,
-              context: {},
+        it("should succeed", async () => {
+            const result: CapturePaymentOutput = await razorpayTest.capturePayment(
+                isMocksEnabled()
+                    ? {
+                          data: capturePaymentContextSuccessData.data,
+                          context: {},
+                      }
+                    : testPaymentSession.session_data
+            );
+
+            if (isMocksEnabled()) {
+                expect(result).toEqual({
+                    id: PaymentIntentDataByStatus.ATTEMPTED.id,
+                });
+            } else {
+                expect(result).toMatchObject({
+                    payments: expect.any(Object),
+                });
             }
-          : testPaymentSession.session_data
-      )
+        });
 
-      if (isMocksEnabled()) {
-        expect(result).toEqual({
-          id: PaymentIntentDataByStatus.ATTEMPTED.id,
-        })
-      } else {
-        expect(result).toMatchObject({
-          payments: expect.any(Object),
-        })
-      }
-    })
-
-    /* it("should fail on intent capture but still return the intent", async () => {
+        /* it("should fail on intent capture but still return the intent", async () => {
       const result = await razorpayTest.capturePayment(
         capturePaymentContextPartiallyFailData.paymentSessionData
       );
@@ -450,76 +423,72 @@ describe("RazorpayTest", () => {
         detail: "Error",
       });
     });*/
-  })
+    });
 
-  describe("deletePayment", function () {
-    beforeAll(async () => {
-      const scopedContainer = { ...container }
-      razorpayTest = new RazorpayTest(scopedContainer, config)
-    })
+    describe("deletePayment", function () {
+        beforeAll(async () => {
+            const scopedContainer = { ...container };
+            razorpayTest = new RazorpayTest(scopedContainer, config);
+        });
 
-    beforeEach(() => {
-      jest.clearAllMocks()
-    })
+        beforeEach(() => {
+            jest.clearAllMocks();
+        });
 
-    it("should succeed", async () => {
-      const result = await razorpayTest.cancelPayment(deletePaymentSuccessData)
+        it("should succeed", async () => {
+            const result = await razorpayTest.cancelPayment(deletePaymentSuccessData);
 
-      expect(result).toEqual({
-        code: "payment_intent_operation_unsupported",
-        error: "Unable to cancel as razorpay doesn't support cancellation",
-      })
-    })
+            expect(result).toEqual({
+                code: "payment_intent_operation_unsupported",
+                error: "Unable to cancel as razorpay doesn't support cancellation",
+            });
+        });
 
-    it("should fail on intent cancellation but still return the intent", async () => {
-      const result = await razorpayTest.cancelPayment(
-        deletePaymentPartiallyFailData
-      )
+        it("should fail on intent cancellation but still return the intent", async () => {
+            const result = await razorpayTest.cancelPayment(deletePaymentPartiallyFailData);
 
-      expect(result).toEqual({
-        code: "payment_intent_operation_unsupported",
-        error: "Unable to cancel as razorpay doesn't support cancellation",
-      })
-    })
+            expect(result).toEqual({
+                code: "payment_intent_operation_unsupported",
+                error: "Unable to cancel as razorpay doesn't support cancellation",
+            });
+        });
 
-    it("should fail on intent cancellation", async () => {
-      const result = await razorpayTest.cancelPayment(deletePaymentFailData)
+        it("should fail on intent cancellation", async () => {
+            const result = await razorpayTest.cancelPayment(deletePaymentFailData);
 
-      expect(result).toEqual({
-        code: "payment_intent_operation_unsupported",
-        error: "Unable to cancel as razorpay doesn't support cancellation",
-      })
-    })
-  })
+            expect(result).toEqual({
+                code: "payment_intent_operation_unsupported",
+                error: "Unable to cancel as razorpay doesn't support cancellation",
+            });
+        });
+    });
 
-  describe("refundPayment", function () {
-    beforeAll(async () => {
-      const scopedContainer = { ...container }
-      razorpayTest = new RazorpayTest(scopedContainer, config)
-    })
+    describe("refundPayment", function () {
+        beforeAll(async () => {
+            const scopedContainer = { ...container };
+            razorpayTest = new RazorpayTest(scopedContainer, config);
+        });
 
-    beforeEach(() => {
-      jest.clearAllMocks()
-    })
+        beforeEach(() => {
+            jest.clearAllMocks();
+        });
 
-    it("should succeed", async () => {
-      const result = await razorpayTest.refundPayment(
-        isMocksEnabled()
-          ? retrievePaymentInput
-          : testPaymentSession.session_data
-      )
-      if (isMocksEnabled()) {
-        expect(result).toMatchObject({
-          sessionid: PaymentIntentDataByStatus.ATTEMPTED.id,
-        })
-      } else {
-        expect(result).toMatchObject({
-          payments: expect.any(Object),
-        })
-      }
-    })
+        it("should succeed", async () => {
+            const result = await razorpayTest.refundPayment(
+                isMocksEnabled() ? retrievePaymentInput : testPaymentSession.session_data
+            );
+            if (isMocksEnabled()) {
+                expect(result).toMatchObject({
+                    sessionid: PaymentIntentDataByStatus.ATTEMPTED.id,
+                });
+            } else {
+                expect(result).toMatchObject({
+                    payments: expect.any(Object),
+                });
+            }
+        });
 
-    /* it("should fail on refund creation", async () => {
+        /* it("should fail on refund creation", async () => {
       const result = await razorpayTest.refundPayment(
         isMocksEnabled() ? refundPaymentFailData : testPaymentSession,
         refundAmount
@@ -531,35 +500,33 @@ describe("RazorpayTest", () => {
         detail: "Error",
       });
     }); */
-  })
+    });
 
-  describe("retrievePayment", function () {
-    beforeAll(async () => {
-      const scopedContainer = { ...container }
-      razorpayTest = new RazorpayTest(scopedContainer, config)
-    })
+    describe("retrievePayment", function () {
+        beforeAll(async () => {
+            const scopedContainer = { ...container };
+            razorpayTest = new RazorpayTest(scopedContainer, config);
+        });
 
-    beforeEach(() => {
-      jest.clearAllMocks()
-    })
+        beforeEach(() => {
+            jest.clearAllMocks();
+        });
 
-    it("should retrieve", async () => {
-      const result = await razorpayTest.retrievePayment(
-        isMocksEnabled()
-          ? retrievePaymentSuccessData
-          : testPaymentSession.session_data
-      )
-      if (isMocksEnabled()) {
-        expect(result).toMatchObject({
-          status: "attempted",
-        })
-      } else {
-        expect((result as any).id).toBeDefined()
-        expect((result as any).id).toMatch("order_")
-      }
-    })
+        it("should retrieve", async () => {
+            const result = await razorpayTest.retrievePayment(
+                isMocksEnabled() ? retrievePaymentSuccessData : testPaymentSession.session_data
+            );
+            if (isMocksEnabled()) {
+                expect(result).toMatchObject({
+                    status: "attempted",
+                });
+            } else {
+                expect((result as any).id).toBeDefined();
+                expect((result as any).id).toMatch("order_");
+            }
+        });
 
-    /* it("should fail on refund creation", async () => {
+        /* it("should fail on refund creation", async () => {
       const result = await razorpayTest.retrievePayment(
         retrievePaymentFailData
       );
@@ -570,22 +537,22 @@ describe("RazorpayTest", () => {
         detail: "Error",
       });
     });*/
-  })
+    });
 
-  if (!isMocksEnabled()) {
-    describe("updatePayment", function () {
-      if (!isMocksEnabled()) {
-        beforeAll(async () => {
-          const scopedContainer = { ...container }
-          razorpayTest = new RazorpayTest(scopedContainer, config)
-        })
+    if (!isMocksEnabled()) {
+        describe("updatePayment", function () {
+            if (!isMocksEnabled()) {
+                beforeAll(async () => {
+                    const scopedContainer = { ...container };
+                    razorpayTest = new RazorpayTest(scopedContainer, config);
+                });
 
-        beforeEach(() => {
-          jest.clearAllMocks()
-        })
-      }
+                beforeEach(() => {
+                    jest.clearAllMocks();
+                });
+            }
 
-      /* it("should succeed to initiate a payment with an existing customer but no razorpay id", async () => {
+            /* it("should succeed to initiate a payment with an existing customer but no razorpay id", async () => {
       const paymentContext: PaymentProcessorContext = {
         email: updatePaymentContextWithDifferentAmount.email,
         currency_code: updatePaymentContextWithDifferentAmount.currency_code,
@@ -629,7 +596,7 @@ describe("RazorpayTest", () => {
       });
     }, 60e6); */
 
-      /* it("should fail to initiate a payment with an existing customer but no razorpay id", async () => {
+            /* it("should fail to initiate a payment with an existing customer but no razorpay id", async () => {
       const result = await razorpayTest.updatePayment(
         updatePaymentContextWithWrongEmail
       );
@@ -662,51 +629,48 @@ describe("RazorpayTest", () => {
       expect(result).not.toBeDefined();
     });
     */
-      if (!isMocksEnabled()) {
-        it("should succeed to update the intent with the new amount", async () => {
-          const paymentContext: InitiatePaymentInput = {
-            currency_code:
-              updatePaymentContextWithDifferentAmount.currency_code,
-            amount: updatePaymentContextWithDifferentAmount.amount,
-            data: {
-              resource_id: updatePaymentContextWithDifferentAmount.resource_id,
-              context: updatePaymentContextWithDifferentAmount.context,
-              paymentSessionData: isMocksEnabled()
-                ? updatePaymentContextWithDifferentAmount.paymentSessionData
-                : testPaymentSession.session_data,
-            },
-            context: {
-              customer: {
-                id: EXISTING_CUSTOMER_ID,
-                email: updatePaymentContextWithDifferentAmount.email,
-              },
-            },
-          }
-          const result = await razorpayTest.updatePayment(
-            isMocksEnabled()
-              ? (updatePaymentContextWithDifferentAmount as any)
-              : paymentContext
-          )
-          if (isMocksEnabled()) {
-            expect(1).toBe(1)
-            console.log("test not valid in mocked mode")
-            // expect(RazorpayMock.orders.edit).toHaveBeenCalled();
-            expect(RazorpayMock.orders.edit).toHaveBeenCalledWith(
-              updatePaymentContextWithDifferentAmount.paymentSessionData.id,
-              {
-                amount: updatePaymentContextWithDifferentAmount.amount,
-              }
-            )
-          }
-          expect(result).toMatchObject({
-            session_data: {
-              amount: updatePaymentContextWithDifferentAmount.amount,
-            },
-          })
-        }, 60e6)
-      }
+            if (!isMocksEnabled()) {
+                it("should succeed to update the intent with the new amount", async () => {
+                    const paymentContext: InitiatePaymentInput = {
+                        currency_code: updatePaymentContextWithDifferentAmount.currency_code,
+                        amount: updatePaymentContextWithDifferentAmount.amount,
+                        data: {
+                            resource_id: updatePaymentContextWithDifferentAmount.resource_id,
+                            context: updatePaymentContextWithDifferentAmount.context,
+                            paymentSessionData: isMocksEnabled()
+                                ? updatePaymentContextWithDifferentAmount.paymentSessionData
+                                : testPaymentSession.session_data,
+                        },
+                        context: {
+                            customer: {
+                                id: EXISTING_CUSTOMER_ID,
+                                email: updatePaymentContextWithDifferentAmount.email,
+                            },
+                        },
+                    };
+                    const result = await razorpayTest.updatePayment(
+                        isMocksEnabled() ? (updatePaymentContextWithDifferentAmount as any) : paymentContext
+                    );
+                    if (isMocksEnabled()) {
+                        expect(1).toBe(1);
+                        console.log("test not valid in mocked mode");
+                        // expect(RazorpayMock.orders.edit).toHaveBeenCalled();
+                        expect(RazorpayMock.orders.edit).toHaveBeenCalledWith(
+                            updatePaymentContextWithDifferentAmount.paymentSessionData.id,
+                            {
+                                amount: updatePaymentContextWithDifferentAmount.amount,
+                            }
+                        );
+                    }
+                    expect(result).toMatchObject({
+                        session_data: {
+                            amount: updatePaymentContextWithDifferentAmount.amount,
+                        },
+                    });
+                }, 60e6);
+            }
 
-      /* it("should fail to update the intent with the new amount", async () => {
+            /* it("should fail to update the intent with the new amount", async () => {
       const result = await razorpayTest.updatePayment(
         updatePaymentContextFailWithDifferentAmount
       );
@@ -725,63 +689,59 @@ describe("RazorpayTest", () => {
         detail: "Error",
       });
     });*/
-    })
-  }
+        });
+    }
 
-  describe("updatePaymentData", function () {
-    beforeAll(async () => {
-      const scopedContainer = { ...container }
-      razorpayTest = new RazorpayTest(scopedContainer, config)
-    })
+    describe("updatePaymentData", function () {
+        beforeAll(async () => {
+            const scopedContainer = { ...container };
+            razorpayTest = new RazorpayTest(scopedContainer, config);
+        });
 
-    beforeEach(() => {
-      jest.clearAllMocks()
-    })
+        beforeEach(() => {
+            jest.clearAllMocks();
+        });
 
-    it("should fail to update the payment data", async () => {
-      const data = isMocksEnabled()
-        ? { data: updatePaymentDataWithoutAmountDataNoNotes }
-        : { ...updatePaymentDataWithoutAmountDataNoNotes }
+        it("should fail to update the payment data", async () => {
+            const data = isMocksEnabled()
+                ? { data: updatePaymentDataWithoutAmountDataNoNotes }
+                : { ...updatePaymentDataWithoutAmountDataNoNotes };
 
-      await razorpayTest.updatePaymentData(
-        isMocksEnabled()
-          ? updatePaymentDataWithoutAmountData.sessionId
-          : (testPaymentSession.id as any),
-        {
-          ...data,
-          sessionId: isMocksEnabled() ? undefined : testPaymentSession.id,
-        }
-      )
-      if (isMocksEnabled()) {
-        expect(RazorpayMock.orders.edit).toHaveBeenCalledTimes(0)
-      }
-    }, 60e6)
+            await razorpayTest.updatePaymentData(
+                isMocksEnabled() ? updatePaymentDataWithoutAmountData.sessionId : (testPaymentSession.id as any),
+                {
+                    ...data,
+                    sessionId: isMocksEnabled() ? undefined : testPaymentSession.id,
+                }
+            );
+            if (isMocksEnabled()) {
+                expect(RazorpayMock.orders.edit).toHaveBeenCalledTimes(0);
+            }
+        }, 60e6);
 
-    it("should succeed to update the payment data", async () => {
-      const data = isMocksEnabled()
-        ? {
-            data: {
-              ...updatePaymentDataWithoutAmountData,
-              notes: { updated: true },
-            },
-          }
-        : { ...updatePaymentDataWithoutAmountData }
+        it("should succeed to update the payment data", async () => {
+            const data = isMocksEnabled()
+                ? {
+                      data: {
+                          ...updatePaymentDataWithoutAmountData,
+                          notes: { updated: true },
+                      },
+                  }
+                : { ...updatePaymentDataWithoutAmountData };
 
-      await razorpayTest.updatePaymentData(
-        isMocksEnabled()
-          ? updatePaymentDataWithoutAmountData.sessionId
-          : (testPaymentSession.id as any),
-        {
-          ...data,
-          sessionId: isMocksEnabled() ? undefined : testPaymentSession.id,
-        }
-      )
-      if (isMocksEnabled()) {
-        expect(RazorpayMock.orders.edit).toHaveBeenCalled()
-      }
-    }, 60e6)
+            await razorpayTest.updatePaymentData(
+                isMocksEnabled() ? updatePaymentDataWithoutAmountData.sessionId : (testPaymentSession.id as any),
+                {
+                    ...data,
+                    sessionId: isMocksEnabled() ? undefined : testPaymentSession.id,
+                }
+            );
+            if (isMocksEnabled()) {
+                expect(RazorpayMock.orders.edit).toHaveBeenCalled();
+            }
+        }, 60e6);
 
-    /* it("should fail to update the payment data if the amount is present", async () => {
+        /* it("should fail to update the payment data if the amount is present", async () => {
       const result = await razorpayTest.updatePaymentData(
         updatePaymentDataWithAmountData.sessionId,
         { ...updatePaymentDataWithAmountData, sessionId: undefined }
@@ -795,5 +755,5 @@ describe("RazorpayTest", () => {
         detail: "Cannot update amount, use updatePayment instead",
       });
     });*/
-  })
-})
+    });
+});

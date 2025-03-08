@@ -1,5 +1,5 @@
-import { BigNumberInput } from "@medusajs/framework/types";
 import { BigNumber, MathBN } from "@medusajs/framework/utils";
+import { BigNumberInput } from "@medusajs/types";
 
 function getCurrencyMultiplier(currency): number {
     const currencyMultipliers = {
@@ -19,9 +19,9 @@ function getCurrencyMultiplier(currency): number {
             "VUV",
             "XAF",
             "XOF",
-            "XPF"
+            "XPF",
         ],
-        3: ["BHD", "IQD", "JOD", "KWD", "OMR", "TND"]
+        3: ["BHD", "IQD", "JOD", "KWD", "OMR", "TND"],
     };
 
     currency = currency.toUpperCase();
@@ -42,15 +42,10 @@ function getCurrencyMultiplier(currency): number {
  * @param {string} currency - The currency code (e.g., 'USD', 'JOD').
  * @returns {number} - The converted amount in the smallest currency unit.
  */
-export function getSmallestUnit(
-    amount: BigNumberInput,
-    currency: string
-): number {
+export function getSmallestUnit(amount: BigNumberInput, currency: string): number {
     const multiplier = getCurrencyMultiplier(currency);
 
-    const amount_ =
-        Math.round(new BigNumber(MathBN.mult(amount, multiplier)).numeric) /
-        multiplier;
+    const amount_ = Math.round(new BigNumber(MathBN.mult(amount, multiplier)).numeric) / multiplier;
 
     const smallestAmount = new BigNumber(MathBN.mult(amount_, multiplier));
 
@@ -69,10 +64,7 @@ export function getSmallestUnit(
  * @param {string} currency - The currency code (e.g., 'USD', 'JOD').
  * @returns {number} - The converted amount in the standard currency unit.
  */
-export function getAmountFromSmallestUnit(
-    amount: BigNumberInput,
-    currency: string
-): number {
+export function getAmountFromSmallestUnit(amount: BigNumberInput, currency: string): number {
     const multiplier = getCurrencyMultiplier(currency);
     const standardAmount = new BigNumber(MathBN.div(amount, multiplier));
     return standardAmount.numeric;
