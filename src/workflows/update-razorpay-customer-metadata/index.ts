@@ -1,7 +1,4 @@
-import {
-    createWorkflow,
-    WorkflowResponse
-} from "@medusajs/framework/workflows-sdk";
+import { createWorkflow, WorkflowResponse } from "@medusajs/framework/workflows-sdk";
 
 import { updateCustomerMetadataStep } from "./steps/update-customer";
 
@@ -12,12 +9,11 @@ export type UpdateRazorpayCustomerMetadataInput = {
 export const updateRazorpayCustomerMetadataWorkflow = createWorkflow(
     "update-razorpay-customer-metadata",
     (input: UpdateRazorpayCustomerMetadataInput) => {
-        const { customer, registerResponse } =
-            updateCustomerMetadataStep(input);
+        const { customer, registerResponse } = updateCustomerMetadataStep(input);
 
         return new WorkflowResponse({
             customer,
-            registerResponse
+            registerResponse,
         });
-    }
+    },
 );

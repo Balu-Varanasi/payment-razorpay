@@ -8,8 +8,8 @@ import {
     RefundPaymentInput,
     RefundPaymentOutput,
     RetrievePaymentOutput,
-} from "@medusajs/framework/types";
-import { PaymentSessionStatus } from "@medusajs/framework/utils";
+} from "@medusajs/types";
+import { PaymentSessionStatus } from "@medusajs/utils";
 import {
     EXISTING_CUSTOMER_CONTACT,
     EXISTING_CUSTOMER_EMAIL,

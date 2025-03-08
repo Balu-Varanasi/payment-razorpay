@@ -20,7 +20,7 @@ No hassle, no fuss! Install Payment-Razorpay effortlessly with npm:
 
 
 
-[RAZORPAY](https://razorpay.com) an immensely popular payment gateway with a host of features. 
+[RAZORPAY](https://razorpay.com) an immensely popular payment gateway with a host of features.
 This provider enables the razorpay payment interface on [medusa](https://medusajs.com) commerce stack
 
 ## Installation
@@ -35,7 +35,7 @@ npm install @sgftech/payment-razorpay
 
 
 Register for a razorpay account and generate the api keys
-In your environment file (.env) you need to define 
+In your environment file (.env) you need to define
 ```
 RAZORPAY_ID=<your api key>
 RAZORPAY_SECRET=<your api key secret>
@@ -82,7 +82,7 @@ modules: [
 ## Client side configuration
 
 
-For the NextJs start you need to  make the following changes 
+For the NextJs start you need to  make the following changes
 
 1. Install package to your next starter. This just makes it easier, importing all the scripts implicitly
 ```
@@ -117,10 +117,10 @@ export const RazorpayPaymentButton = ({
   const [errorMessage, setErrorMessage] = useState<string | undefined>(undefined)
   const {Razorpay
    } = useRazorpay();
-  
+
   const [orderData,setOrderData] = useState({id:""})
 
-  
+
   console.log(`session_data: `+JSON.stringify(session))
   const onPaymentCompleted = async () => {
     await placeOrder().catch(() => {
@@ -132,7 +132,7 @@ export const RazorpayPaymentButton = ({
     setOrderData(session.data as {id:string})
   },[session.data])
 
-  
+
 
 
   const handlePayment = useCallback(async() => {
@@ -151,7 +151,7 @@ export const RazorpayPaymentButton = ({
       name: process.env.COMPANY_NAME ?? "your company name ",
       description: `Order number ${orderData.id}`,
       remember_customer:true,
-      
+
 
       image: "https://example.com/your_logo",
       modal: {
@@ -166,7 +166,7 @@ export const RazorpayPaymentButton = ({
         },
         animation: true,
       },
-      
+
       handler: async () => {
         onPaymentCompleted()
       },
@@ -175,19 +175,19 @@ export const RazorpayPaymentButton = ({
         "email": cart?.email,
         "contact": (cart?.shipping_address?.phone) ?? undefined
       },
-      
-      
+
+
     };
     console.log(JSON.stringify(options.amount))
     //await waitForPaymentCompletion();
-    
-    
+
+
     const razorpay = new Razorpay(options);
     if(orderData.id)
     razorpay.open();
     razorpay.on("payment.failed", function (response: any) {
       setErrorMessage(JSON.stringify(response.error))
-   
+
     })
    razorpay.on("payment.authorized" as any, function (response: any) {
     const authorizedCart = placeOrder().then(authorizedCart=>{
@@ -221,7 +221,7 @@ export const RazorpayPaymentButton = ({
 }
 `````
 
-Step 3. 
+Step 3.
 
 nextjs-starter-medusa/src/lib/constants.tsx
 add
@@ -245,7 +245,7 @@ export const paymentInfoMap: Record<
 ````
 step 4.add into the payment element <next-starter>/src/modules/checkout/components/payment-button/index.tsx
 
-first 
+first
 ```
 import import {RazorpayPaymentButton} from "./razorpay-payment-button"
 ```
@@ -282,13 +282,13 @@ Step 5. Add environment variables in the client
   NEXT_PUBLIC_SHOP_NAME:<your razorpay shop name>
   NEXT_PUBLIC_SHOP_DESCRIPTION: <your razorpayshop description>
 #### watch out
-Step 6. Caveat 
+Step 6. Caveat
 the default starter template has an option which says use the same shipping and billing address
 please ensure you deselect this and enter the phone number manually in the billing section.
 
 Step 7.
 
-In razorpay create a webhook with the following url 
+In razorpay create a webhook with the following url
 
 <your host>/hooks/payment/razorpay_razorpay
 

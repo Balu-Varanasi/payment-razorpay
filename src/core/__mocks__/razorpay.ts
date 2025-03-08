@@ -116,7 +116,7 @@ export const RazorpayMock: any = {
                             status: ErrorIntentStatus.CANCELED,
                         },
                         type: "invalid_request_error",
-                    })
+                    }),
                 );
             }
 
@@ -136,7 +136,7 @@ export const RazorpayMock: any = {
                             status: ErrorIntentStatus.SUCCEEDED,
                         } as any,
                         type: "invalid_request_error",
-                    })
+                    }),
                 );
             }
 

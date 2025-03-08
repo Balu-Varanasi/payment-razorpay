@@ -7,8 +7,8 @@ import {
     GetPaymentStatusOutput,
     InitiatePaymentInput,
     InitiatePaymentOutput,
-} from "@medusajs/framework/types";
-import { PaymentSessionStatus } from "@medusajs/framework/utils";
+} from "@medusajs/types";
+import { PaymentSessionStatus } from "@medusajs/utils";
 import dotenv from "dotenv";
 import {
     authorizePaymentSuccessData,
@@ -128,18 +128,16 @@ describe("RazorpayTest", () => {
                     data: initiatePaymentContextWithExistingCustomer.data,
                     context: initiatePaymentContextWithExistingCustomer.context,
                 };
-                const initiatePaymentOutput: InitiatePaymentOutput = await razorpayTest.initiatePayment(
-                    initiatePaymentInput
-                );
+                const initiatePaymentOutput: InitiatePaymentOutput =
+                    await razorpayTest.initiatePayment(initiatePaymentInput);
 
                 const paymentStatusInput: GetPaymentStatusInput = {
                     data: initiatePaymentOutput.data,
                     context: {},
                 };
 
-                const paymentStatusOutput: GetPaymentStatusOutput = await razorpayTest.getPaymentStatus(
-                    paymentStatusInput
-                );
+                const paymentStatusOutput: GetPaymentStatusOutput =
+                    await razorpayTest.getPaymentStatus(paymentStatusInput);
                 expect(paymentStatusOutput.status).toBe(PaymentSessionStatus.REQUIRES_MORE);
             });
         }
@@ -191,13 +189,13 @@ describe("RazorpayTest", () => {
                             razorpay_id: isMocksEnabled() ? RAZORPAY_ID : expect.stringContaining("cus"),
                         },
                     },
-                })
+                }),
             );
         });
 
         it("should succeed with an existing customer with an existing razorpay id", async () => {
             const result = await razorpayTest.initiatePayment(
-                initiatePaymentContextWithExistingCustomerRazorpayId as any
+                initiatePaymentContextWithExistingCustomerRazorpayId as any,
             );
             if (isMocksEnabled()) {
                 expect(RazorpayMock.customers.create).not.toHaveBeenCalled();
@@ -221,7 +219,7 @@ describe("RazorpayTest", () => {
                       }
                     : {
                           session_data: expect.any(Object),
-                      }
+                      },
             );
             if (!isMocksEnabled()) {
                 expect((result as any).session_data.id).toBeDefined();
@@ -313,7 +311,7 @@ describe("RazorpayTest", () => {
                     ? authorizePaymentSuccessData
                     : {
                           data: testPaymentSession.session_data,
-                      }
+                      },
             );
 
             expect(authorizePaymentOutput).toMatchObject({
@@ -387,7 +385,7 @@ describe("RazorpayTest", () => {
                           data: capturePaymentContextSuccessData.data,
                           context: {},
                       }
-                    : testPaymentSession.session_data
+                    : testPaymentSession.session_data,
             );
 
             if (isMocksEnabled()) {
@@ -475,7 +473,7 @@ describe("RazorpayTest", () => {
 
         it("should succeed", async () => {
             const result = await razorpayTest.refundPayment(
-                isMocksEnabled() ? retrievePaymentInput : testPaymentSession.session_data
+                isMocksEnabled() ? retrievePaymentInput : testPaymentSession.session_data,
             );
             if (isMocksEnabled()) {
                 expect(result).toMatchObject({
@@ -514,7 +512,7 @@ describe("RazorpayTest", () => {
 
         it("should retrieve", async () => {
             const result = await razorpayTest.retrievePayment(
-                isMocksEnabled() ? retrievePaymentSuccessData : testPaymentSession.session_data
+                isMocksEnabled() ? retrievePaymentSuccessData : testPaymentSession.session_data,
             );
             if (isMocksEnabled()) {
                 expect(result).toMatchObject({
@@ -649,7 +647,7 @@ describe("RazorpayTest", () => {
                         },
                     };
                     const result = await razorpayTest.updatePayment(
-                        isMocksEnabled() ? (updatePaymentContextWithDifferentAmount as any) : paymentContext
+                        isMocksEnabled() ? (updatePaymentContextWithDifferentAmount as any) : paymentContext,
                     );
                     if (isMocksEnabled()) {
                         expect(1).toBe(1);
@@ -659,7 +657,7 @@ describe("RazorpayTest", () => {
                             updatePaymentContextWithDifferentAmount.paymentSessionData.id,
                             {
                                 amount: updatePaymentContextWithDifferentAmount.amount,
-                            }
+                            },
                         );
                     }
                     expect(result).toMatchObject({
@@ -712,7 +710,7 @@ describe("RazorpayTest", () => {
                 {
                     ...data,
                     sessionId: isMocksEnabled() ? undefined : testPaymentSession.id,
-                }
+                },
             );
             if (isMocksEnabled()) {
                 expect(RazorpayMock.orders.edit).toHaveBeenCalledTimes(0);
@@ -734,7 +732,7 @@ describe("RazorpayTest", () => {
                 {
                     ...data,
                     sessionId: isMocksEnabled() ? undefined : testPaymentSession.id,
-                }
+                },
             );
             if (isMocksEnabled()) {
                 expect(RazorpayMock.orders.edit).toHaveBeenCalled();
