@@ -2,6 +2,10 @@ dist
 node_modules
 .DS_store
 yarn.lock
+pnpm-lock.yaml
 .turbo/
 .medusa/
+.env
 *.tgz
+.vscode/
+.idea/
